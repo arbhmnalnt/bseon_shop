@@ -1,0 +1,21 @@
+{% extends "core/base.html" %}  {# Ensure you have a global base template #}
+{% block content %}
+<form method="post" class="p-4 shadow rounded bg-white" style="max-width: 500px; margin: auto;">
+  {% csrf_token %}
+
+  {% for field in form %}
+      <div class="mb-3">
+          <p class="d-inline-block" style="color:black; min-width:15vw">{{ field.label_tag }}</p>  <!-- This ensures labels appear -->
+          {{ field }}
+          {% if field.errors %}
+              <div class="text-danger small">
+                  {{ field.errors.as_text }}
+              </div>
+          {% endif %}
+      </div>
+  {% endfor %}
+
+  <button type="submit" class="btn btn-primary w-100">💾 Save</button>
+</form>
+
+{% endblock %}
