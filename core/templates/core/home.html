@@ -4,7 +4,7 @@
   <div class="container text-center mt-5 homepage_container">
       <h1>برنامج كاشير البسيون</h1>
       <p>هذا البرنامج مخصص للمساعدة فى إدارة عمليات البيع والمخزن</p>
-      <a href="#" class="btn btn-primary d-block p-3">شاشة البيع</a><hr>
+      <a href="{% url 'seller:invoice-create' %}" class="btn btn-primary d-block p-3">شاشة البيع</a><hr>
       <a href="{% url 'stock:product-list' %}" class="btn btn-danger d-block p-3">المخزن</a>
   </div>
 {% endblock %}

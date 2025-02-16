@@ -11,3 +11,8 @@ body{
   height: 100vh;
   color:#FFF
 }
+
+.select2-results__option{
+  background-color: blueviolet!important;
+  margin-bottom: 2vh;
+}

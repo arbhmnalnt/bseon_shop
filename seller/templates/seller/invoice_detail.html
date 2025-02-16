@@ -1,0 +1,33 @@
+{% extends "core/base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Invoice #{{ invoice.id }}</h2>
+    <p><strong>العميل:</strong> {{ invoice.customer_name }}</p>
+    <p><strong>الإجمالى:</strong> {{ invoice.total_price }} جنيه</p>
+    <p><strong>التاريخ:</strong> {{ invoice.created_at|date:"Y-m-d H:i" }}</p>
+
+    <h4>المنتجات</h4>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>المنتج</th>
+                <th>الكمية</th>
+                <th>سعر الوحدة</th>
+                <th>الإجمالى</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in invoice.items.all %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.price_per_unit }}</td>
+                <td>{{ item.total_price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'seller:invoice-list' %}" class="btn btn-secondary">قائمة الفواتير</a>
+</div>
+{% endblock %}

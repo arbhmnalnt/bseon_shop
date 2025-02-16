@@ -2,7 +2,7 @@
 {% block content %}
 {% for product in products %}
     <p class="btn-primary btn">{{ product.name }} - {{ product.price }} جنيه - الكمية المتاحة -> {{ product.stock_quantity }} </p>
-    <a class="btn-info btn" href="{% url 'stock:product-update' product.id %}">تعديل</a>
+\    <a class="btn-info btn" href="{% url 'stock:product-update' product.id %}">تعديل</a>
     <a class="btn-danger btn" href="{% url 'stock:product-delete' product.id %}">حذف</a><br>
 {% endfor %}
 <br>
