@@ -1,21 +1,70 @@
-{% extends "core/base.html" %}  {# Ensure you have a global base template #}
+{% extends "core/base.html" %}
 {% block content %}
-<form method="post" class="p-4 shadow rounded bg-white" style="max-width: 500px; margin: auto;">
-  {% csrf_token %}
-
-  {% for field in form %}
-      <div class="mb-3">
-          <p class="d-inline-block" style="color:black; min-width:15vw">{{ field.label_tag }}</p>  <!-- This ensures labels appear -->
-          {{ field }}
-          {% if field.errors %}
-              <div class="text-danger small">
-                  {{ field.errors.as_text }}
-              </div>
-          {% endif %}
-      </div>
-  {% endfor %}
-
-  <button type="submit" class="btn btn-primary w-100">💾 Save</button>
-</form>
-
+<div class="container mt-5">
+    <h2 class="mb-4">
+        {% if form.instance.pk %}
+            Edit Product
+        {% else %}
+            Add New Product
+        {% endif %}
+    </h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="card p-4">
+            <div class="row">
+                <!-- Name -->
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">Product Name</label>
+                    {{ form.name }}
+                </div>
+                <!-- Category -->
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
+                    {{ form.category }}
+                </div>
+                <!-- Supplier -->
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.supplier.id_for_label }}" class="form-label">Supplier</label>
+                    {{ form.supplier }}
+                </div>
+                <!-- Base Unit -->
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.base_unit.id_for_label }}" class="form-label">Base Unit</label>
+                    {{ form.base_unit }}
+                </div>
+                <!-- Big Unit -->
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.big_unit.id_for_label }}" class="form-label">Big Unit</label>
+                    {{ form.big_unit }}
+                </div>
+                <!-- Units in Big Unit -->
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.units_in_big_unit.id_for_label }}" class="form-label">Units in Big Unit</label>
+                    {{ form.units_in_big_unit }}
+                </div>
+                <!-- Purchase Price (Big Unit) -->
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.buy_price_big.id_for_label }}" class="form-label">Purchase Price (Big Unit)</label>
+                    {{ form.buy_price_big }}
+                </div>
+                <!-- Selling Price (Per Base Unit) -->
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.sell_price_base.id_for_label }}" class="form-label">Selling Price (Per Base Unit)</label>
+                    {{ form.sell_price_base }}
+                </div>
+                <!-- Stock Quantity -->
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.stock_quantity.id_for_label }}" class="form-label">Stock Quantity</label>
+                    {{ form.stock_quantity }}
+                </div>
+                <!-- Barcode -->
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.barcode.id_for_label }}" class="form-label">Barcode</label>
+                    {{ form.barcode }}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success w-100">Save Product</button>
+        </div>
+    </form>
+</div>
 {% endblock %}

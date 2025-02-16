@@ -3,7 +3,13 @@ from .models import Product
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'supplier', 'price', 'stock_quantity', 'barcode')  # Fields displayed in the list view
-    search_fields = ('name', 'category', 'supplier', 'barcode')  # Enables search bar
-    list_filter = ('category', 'supplier')  # Adds filter options
-    ordering = ('name',)
+    list_display = (
+        'name', 'base_unit', 'big_unit', 'units_in_big_unit',
+        'buy_price_big', 'sell_price_base', 'stock_quantity', 'barcode'
+    )
+    fields = (
+        'name', 'category', 'supplier',
+        'base_unit', 'big_unit', 'units_in_big_unit',
+        'buy_price_big', 'sell_price_base',
+        'stock_quantity', 'barcode'
+    )

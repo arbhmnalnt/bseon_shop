@@ -1,31 +1,28 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
 from .models import Product
 from .forms import ProductForm
 
-# List all products
-class ProductListView(ListView):
-    model = Product
-    template_name = 'stock/product_list.html'
-    context_object_name = 'products'
+def product_list(request):
+    products = Product.objects.all().order_by('name')
+    return render(request, 'stock/product_list.html', {'products': products})
 
-# Create a new product
-class ProductCreateView(CreateView):
-    model = Product
-    form_class = ProductForm
-    template_name = 'stock/product_form.html'
-    success_url = reverse_lazy('stock:product-list')
+def product_create(request):
+    if request.method == 'POST':
+        form = ProductForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('stock:product_list')
+    else:
+        form = ProductForm()
+    return render(request, 'stock/product_form.html', {'form': form})
 
-# Update an existing product
-class ProductUpdateView(UpdateView):
-    model = Product
-    form_class = ProductForm
-    template_name = 'stock/product_form.html'
-    success_url = reverse_lazy('stock:product-list')
-
-# Delete a product
-class ProductDeleteView(DeleteView):
-    model = Product
-    template_name = 'stock/product_confirm_delete.html'
-    success_url = reverse_lazy('product-list')
+def product_update(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+    if request.method == 'POST':
+        form = ProductForm(request.POST, instance=product)
+        if form.is_valid():
+            form.save()
+            return redirect('stock:product_list')
+    else:
+        form = ProductForm(instance=product)
+    return render(request, 'stock/product_form.html', {'form': form})

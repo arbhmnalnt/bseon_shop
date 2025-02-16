@@ -22,6 +22,7 @@ from django.conf.urls.static import static
 urlpatterns = [
   path('admin/', admin.site.urls),
 	path('', include('core.urls')),
+  path("select2/", include("django_select2.urls")),
   path('stock/', include('stock.urls')),
   path('seller/', include('seller.urls')),
 ]# Serve media files during development
