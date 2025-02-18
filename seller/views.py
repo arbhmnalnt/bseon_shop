@@ -17,15 +17,20 @@ def invoice_list(request):
 def get_product_price(request, product_id):
     try:
         product = Product.objects.get(id=product_id)
-        return JsonResponse({'price': float(product.price)})
+        data = {
+            "sell_price_base": float(product.sell_price_base),
+            "big_unit": product.big_unit if product.big_unit else "",
+            "units_in_big_unit": product.units_in_big_unit if product.units_in_big_unit else 1,
+            "base_unit": product.base_unit,
+        }
+        return JsonResponse(data)
     except Product.DoesNotExist:
-        return JsonResponse({'price': 0})
+        return JsonResponse({"sell_price_base": 0, "big_unit": "", "units_in_big_unit": 1, "base_unit": ""})
 
 def create_invoice(request):
     InvoiceItemFormSet = inlineformset_factory(
         Invoice, InvoiceItem, form=InvoiceItemForm, extra=2, can_delete=True
     )
-
     if request.method == 'POST':
         invoice_form = InvoiceForm(request.POST)
         formset = InvoiceItemFormSet(request.POST, prefix='items')
@@ -34,6 +39,7 @@ def create_invoice(request):
             total_price = 0
             for item in formset.save(commit=False):
                 item.invoice = invoice
+                # Calculate each invoice item's total price
                 item.total_price = item.quantity * item.price_per_unit
                 item.save()
                 total_price += item.total_price

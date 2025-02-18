@@ -17,19 +17,3 @@ class ProductForm(forms.ModelForm):
             'stock_quantity',
             'barcode'
         ]
-        widgets = {
-            'base_unit': Select2TagWidget(
-                attrs={
-                    'data-tags': 'true',
-                    'data-placeholder': 'Select or add a base unit',
-                    'data-width': '100%'
-                }
-            ),
-            'big_unit': Select2TagWidget(
-                attrs={
-                    'data-tags': 'true',
-                    'data-placeholder': 'Select or add a big unit',
-                    'data-width': '100%'
-                }
-            ),
-        }

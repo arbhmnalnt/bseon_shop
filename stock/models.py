@@ -1,26 +1,26 @@
 from django.db import models
 
 class Product(models.Model):
-    name = models.CharField(max_length=255)
-    category = models.CharField(max_length=100, blank=True, null=True)
-    supplier = models.CharField(max_length=100, blank=True, null=True)
+    name = models.CharField(max_length=255, verbose_name='اسم النمنتج')
+    category = models.CharField(max_length=100, blank=True, null=True, verbose_name='التصنسف')
+    supplier = models.CharField(max_length=100, blank=True, null=True, verbose_name='المورد')
 
     # Unit fields:
     base_unit = models.CharField(
         max_length=50,
-        default="piece",
-        help_text="Smallest unit (e.g., piece, gram, bottle)"
+        default="قطعة واحدة",
+        verbose_name='وحدة القياس الاقل'
     )
     big_unit = models.CharField(
         max_length=50,
         blank=True,
         null=True,
-        help_text="Larger unit (e.g., carton, dozen). Leave blank if not applicable."
+        help_text="وحدة  القياس الاكبر"
     )
     units_in_big_unit = models.PositiveIntegerField(
         blank=True,
         null=True,
-        help_text="Number of base units in one big unit"
+        verbose_name='عدد الوحدات الاقل'
     )
 
     # Pricing
@@ -29,12 +29,12 @@ class Product(models.Model):
         decimal_places=2,
         blank=True,
         null=True,
-        help_text="Purchase price per big unit (if applicable)"
+        verbose_name='سعر شراء الوحدة الاكبر - اختيارى'
     )
     sell_price_base = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        help_text="Selling price per base unit"
+        verbose_name='سعر بيع الوحدة الاقل'
     )
 
     stock_quantity = models.PositiveIntegerField(default=0)

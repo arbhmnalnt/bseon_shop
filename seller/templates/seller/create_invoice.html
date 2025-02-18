@@ -4,26 +4,26 @@
     <h2>إنشاء عملية بيع جديدة</h2>
     <form method="post">
         {% csrf_token %}
-
         <div class="card p-3 mb-3">
             <h4>اسم العميل</h4>
             {{ invoice_form.as_p }}
         </div>
-
         <div class="card p-3 mb-3">
             <h4>المنتجات</h4>
-            {{ formset.management_form }}  {# management form with prefix "items" #}
-            <div id="product-list">
+            {{ formset.management_form }}
+            <div id="product_list">
                 {% for form in formset %}
                 <div class="row mb-3 product-item">
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                         {{ form.product }}
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        {{ form.sold_unit }}
+                    </div>
+                    <div class="col-md-2">
                         {{ form.quantity }}
                     </div>
                     <div class="col-md-3">
-                        {# Render the actual price_per_unit field #}
                         {{ form.price_per_unit }}
                     </div>
                     <div class="col-md-12 text-end mt-2">
@@ -34,37 +34,38 @@
             </div>
             <button type="button" id="add-product" class="btn btn-primary">بيع منتج جديدة</button>
         </div>
-
         <div class="card p-3 mb-3">
             <h4>الإجمالى <span id="total-price">0.00</span> جنيه مصرى</h4>
         </div>
-
-        <button type="submit" class="btn btn-success">حفظ عنلية البيع - الفاتورة</button>
+        <button type="submit" class="btn btn-success">حفظ عملية البيع - الفاتورة</button>
     </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- Initialize Select2 for existing product selects -->
+<!-- Initialize Select2 on existing product select fields and bind to "select2:select" -->
 <script>
-    $(document).ready(function() {
-        // Initialize Select2 on all elements with the class "select-product"
-        $('.select-product').select2({
-            placeholder: "اختر المنتج",
-            allowClear: true,
-            width: '100%'
-        });
+$(document).ready(function(){
+    $('.select-product').select2({
+       placeholder: "اختر المنتج",
+       allowClear: true,
+       width: '100%'
+    }).on("select2:select", function(e){
+       // When a product is selected, trigger fetching its details.
+       let row = $(this).closest(".product-item")[0];
+       fetchProductDetails(this, row);
     });
+});
 </script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    // Select the management form field using the prefix "items"
     let totalForms = document.querySelector("input[name='items-TOTAL_FORMS']");
-    let productList = document.getElementById("product-list");
+    let productList = document.getElementById("product_list");
     let addProductButton = document.getElementById("add-product");
     let totalPriceField = document.getElementById("total-price");
 
+    // Update overall invoice total by summing row totals.
     function updateTotal() {
         let total = 0;
         document.querySelectorAll(".product-item").forEach(item => {
@@ -77,25 +78,52 @@ document.addEventListener("DOMContentLoaded", function () {
         totalPriceField.textContent = total.toFixed(2);
     }
 
-    function fetchProductPrice(productField, priceField) {
-        let productId = productField.value;
-        console.log("Fetching price for product ID:", productId);
-        if (productId) {
-            fetch(`/seller/get-product-price/${productId}/`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Fetched data:", data);
-                    // Update the form field (price_per_unit) so it gets submitted
-                    priceField.value = data.price;
-                    updateTotal();
-                })
-                .catch(error => console.error("Error fetching product price:", error));
+    // Update price in a row based on the selected unit.
+    function updateRowPrice(row) {
+        let productField = row.querySelector("select.select-product");
+        let unitSelect = row.querySelector("select.unit-select");
+        let priceField = row.querySelector(".price-field");
+        if (!productField.dataset.productInfo) return;
+        let productData = JSON.parse(productField.dataset.productInfo);
+        let selectedUnit = unitSelect.value; // either "base" or "big"
+        let basePrice = parseFloat(productData.sell_price_base);
+        if (selectedUnit === 'big') {
+            let conversion = parseFloat(productData.units_in_big_unit) || 1;
+            priceField.value = (basePrice * conversion).toFixed(2);
         } else {
-            priceField.value = "";
-            updateTotal();
+            priceField.value = basePrice.toFixed(2);
         }
+        updateTotal();
     }
 
+    // Fetch product details from the server and store in the product field's dataset.
+    function fetchProductDetails(productField, row) {
+        fetch(`/seller/get-product-price/${productField.value}/`)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Fetched data:", data);
+                productField.dataset.productInfo = JSON.stringify(data);
+                let unitSelect = row.querySelector("select.unit-select");
+                if (!data.big_unit) {
+                    unitSelect.innerHTML = `<option value="base">الوحدة الاقل (${data.base_unit})</option>`;
+                } else {
+                    unitSelect.innerHTML = `<option value="base">الوحدة الاقل (${data.base_unit})</option>
+                                             <option value="big">الوحدة الاكبر (${data.big_unit})</option>`;
+                }
+                updateRowPrice(row);
+            })
+            .catch(error => console.error("Error fetching product details:", error));
+    }
+
+    // Bind unit-select change event for a row.
+    function bindUnitChange(row) {
+        let unitSelect = row.querySelector("select.unit-select");
+        unitSelect.addEventListener("change", function() {
+            updateRowPrice(row);
+        });
+    }
+
+    // Function to add a new product row.
     function addProductRow() {
         if (!totalForms) {
             console.error("Total forms field not found.");
@@ -103,21 +131,16 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         let formNum = parseInt(totalForms.value);
         let templateRow = productList.children[0];
-
-        // Destroy Select2 on the product field in the template row so we clone a clean element
+        // Destroy Select2 on the product field in the template row for a clean clone.
         $(templateRow).find("select.select-product").select2("destroy");
-
-        // Clone the cleaned template row
         let newForm = templateRow.cloneNode(true);
-
-        // Reinitialize Select2 on the original template row so it remains functional
+        // Reinitialize Select2 on the original template row.
         $(templateRow).find("select.select-product").select2({
-            placeholder: "Select a product",
+            placeholder: "اختر المنتج",
             allowClear: true,
             width: '100%'
         });
-
-        // Update the cloned row's indices and clear its values
+        // Update cloned row's indices and clear its fields.
         newForm.innerHTML = newForm.innerHTML.replace(/items-\d+/g, `items-${formNum}`);
         newForm.querySelectorAll("input, select").forEach(el => {
             if (el.tagName.toLowerCase() === "select") {
@@ -126,25 +149,20 @@ document.addEventListener("DOMContentLoaded", function () {
                 el.value = "";
             }
         });
-
         productList.appendChild(newForm);
         totalForms.value = formNum + 1;
 
-        let newProductField = newForm.querySelector("select[name$='-product']");
-        let newPriceField = newForm.querySelector(".price-field");
-
-        // Initialize Select2 on the new product field
+        let newProductField = newForm.querySelector("select.select-product");
+        // Reinitialize Select2 on the new product field and bind to select2:select event.
         $(newProductField).select2({
-            placeholder: "Select a product",
+            placeholder: "اختر المنتج",
             allowClear: true,
             width: '100%'
-        });
-
-        // Bind the select2:select event so that when a product is chosen, its price is fetched
-        $(newProductField).on("select2:select", function(e) {
+        }).on("select2:select", function(e) {
             console.log("Product selected in new row:", newProductField.value);
-            fetchProductPrice(newProductField, newPriceField);
+            fetchProductDetails(newProductField, newForm);
         });
+        bindUnitChange(newForm);
         newForm.querySelector("input[name$='-quantity']").addEventListener("input", updateTotal);
         newForm.querySelector(".remove-product").addEventListener("click", function () {
             newForm.remove();
@@ -154,19 +172,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     addProductButton.addEventListener("click", addProductRow);
 
-    // For the existing rows, bind the select2:select event
-    $("select.select-product").on("select2:select", function(e) {
-        let priceField = $(this).closest(".product-item").find(".price-field")[0];
-        console.log("Product selected in original row:", this.value);
-        fetchProductPrice(this, priceField);
+    // For existing rows, bind unit-select change events.
+    document.querySelectorAll("select.unit-select").forEach(function(unitSelect) {
+        let row = unitSelect.closest(".product-item");
+        unitSelect.addEventListener("change", function() {
+            updateRowPrice(row);
+        });
     });
-
-    // Bind quantity input changes to update the total price
+    // Bind quantity inputs and remove buttons for existing rows.
     document.querySelectorAll("input[name$='-quantity']").forEach(field => {
         field.addEventListener("input", updateTotal);
     });
-
-    // Bind remove buttons to remove the row and update the total price
     document.querySelectorAll(".remove-product").forEach(button => {
         button.addEventListener("click", function () {
             button.closest(".product-item").remove();
