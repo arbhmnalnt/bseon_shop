@@ -1,9 +1,31 @@
 from django.contrib import admin
-from .models import Product
+from .models import Unit, Product, StockEntry
+from .forms import *
+
+@admin.register(Unit)
+class UnitAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'supplier', 'price', 'stock_quantity', 'barcode')  # Fields displayed in the list view
-    search_fields = ('name', 'category', 'supplier', 'barcode')  # Enables search bar
-    list_filter = ('category', 'supplier')  # Adds filter options
-    ordering = ('name',)
+    form = ProductForm
+    list_display = ('name', 'category', 'supplier', 'big_unit', 'small_unit', 'stock_quantity_big', 'barcode')
+    search_fields = ('name', 'category', 'supplier', 'barcode')
+    list_filter = ('category', 'supplier')
+    
+    fieldsets = (
+        ("Product Info", {"fields": ("name", "category", "supplier", "barcode")}),
+        ("Unit & Pricing", {"fields": ("big_unit", "big_unit_cost_price", "big_unit_sell_price",
+                                       "small_unit", "small_units_counts", 
+                                       "small_unit_cost_price", "small_unit_sell_price")}),
+        ("Stock Information", {"fields": ("stock_quantity_big",)}),
+    )
+
+@admin.register(StockEntry)
+class StockEntryAdmin(admin.ModelAdmin):
+    list_display = ('product', 'unit', 'quantity', 'transaction_type', 'created_at')
+    search_fields = ('product__name',)
+    list_filter = ('transaction_type', 'created_at')
+    ordering = ('-created_at',)
+
