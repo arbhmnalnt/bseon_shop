@@ -1,6 +1,6 @@
 from django import forms
 from .models import Invoice, InvoiceItem
-from stock.models import Product
+from stock.models import Product, Unit
 
 class InvoiceForm(forms.ModelForm):
     class Meta:
@@ -13,10 +13,18 @@ class InvoiceItemForm(forms.ModelForm):
         label="Product",
         widget=forms.Select(attrs={'class': 'form-control select-product'})
     )
-    # Render the price field and make it read-only
+    unit = forms.ModelChoiceField(
+        queryset=Unit.objects.all(),
+        label="Unit",
+        widget=forms.Select(attrs={'class': 'form-control select-unit'})
+    )
+    quantity = forms.IntegerField(
+        widget=forms.NumberInput(attrs={'class': 'form-control quantity-field', 'min': 1})
+    )
     price_per_unit = forms.DecimalField(
         widget=forms.TextInput(attrs={'class': 'form-control price-field', 'readonly': 'readonly'})
     )
+    
     class Meta:
         model = InvoiceItem
-        fields = ['product', 'quantity', 'price_per_unit']
+        fields = ['product', 'unit', 'quantity', 'price_per_unit']

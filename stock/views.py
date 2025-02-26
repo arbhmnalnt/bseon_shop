@@ -13,8 +13,12 @@ def product_create(request):
         form = ProductForm()
     return render(request, 'stock/product_form.html', {'form': form})
                   
-def product_delete(request):
-    pass
+def product_delete(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+    if request.method == 'POST':
+        product.delete()
+        return redirect('stock:product_list')
+    return render(request, 'stock/product_confirm_delete.html', {'product': product})
 
 def product_update(request, pk):
     product = get_object_or_404(Product, pk=pk)
