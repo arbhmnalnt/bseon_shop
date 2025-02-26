@@ -28,7 +28,7 @@ def get_product_price(request):
 
 def create_invoice(request):
     InvoiceItemFormSet = inlineformset_factory(
-        Invoice, InvoiceItem, form=InvoiceItemForm, extra=2, can_delete=True
+        Invoice, InvoiceItem, form=InvoiceItemForm, extra=3, can_delete=True
     )
 
     if request.method == 'POST':
