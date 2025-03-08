@@ -18,3 +18,17 @@
     </form>
     <a href="{% url 'stock:product_list' %}" class="btn btn-secondary mt-3">العودة إلى قائمة المنتجات</a>
 {% endblock %}
+
+{% block extra_js %}
+    /// some calculation
+    $("#id_small_units_counts").keyup(function(){
+        let bigCost = bigSell = smallCost = smallSell  = 0;
+        bigCost = $("#id_big_unit_cost_price").val();
+        bigSell = $("#id_big_unit_sell_price").val();
+        smallUnits = $("#id_small_units_counts").val();
+        smallCost = parseFloat((bigCost / smallUnits).toFixed(2));
+        $("#id_small_unit_cost_price").val(smallCost);
+    })
+    
+{% endblock %}
+

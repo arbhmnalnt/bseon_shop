@@ -1,6 +1,9 @@
 from django.contrib import admin
+from import_export.admin import ImportExportModelAdmin
 from .models import Unit, Product, StockEntry
 from .forms import *
+
+
 
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
@@ -8,7 +11,7 @@ class UnitAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 @admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
+class ProductAdmin(ImportExportModelAdmin,admin.ModelAdmin):
     form = ProductForm
     list_display = ('name', 'category', 'supplier', 'big_unit', 'small_unit', 'stock_quantity_big', 'barcode')
     search_fields = ('name', 'category', 'supplier', 'barcode')

@@ -14,3 +14,8 @@ body {
   background-color: blueviolet !important;
   margin-bottom: 2vh;
 }
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__display{
+  color :black!important;
+  
+}

@@ -1,13 +1,21 @@
-body{
+body {
   direction: rtl;
+  background-image: url('../imgs/back.jpg');
+  background-size: cover; /* Ensures full-page coverage */
+  background-position: center top; /* Adjust as needed */
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* Prevents stretching on scroll */
+  font-family: 'Helvetica', sans-serif;
+  color: #FFF;
+  min-height: 100vh; /* Ensures it takes at least the viewport height */
 }
 
-body{
-  background-image: url('../imgs/back.jpg');
-  background-size: cover;
-  font-family: 'Helvetica', sans-serif;
-  background-position: center;
-  background-repeat: no-repeat;
-  height: 100vh;
-  color:#FFF
+.select2-results__option {
+  background-color: blueviolet !important;
+  margin-bottom: 2vh;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__display{
+  color :black!important;
+  
 }
