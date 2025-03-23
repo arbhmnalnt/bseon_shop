@@ -1,6 +1,5 @@
-{% extends "core/base.html" %}  {# Ensure you have a global base template #}
+{% extends "core/base.html" %}
 {% block content %}
-
 <div class="container mt-4">
     <h2 class="text-center mb-4">قائمة المنتجات</h2>
     
@@ -14,11 +13,8 @@
                 <tr>
                     <th>المنتج</th>
                     <th>التصنيف</th>
-                    <th>السعر الكبير</th>
-                    <th>السعر الصغير</th>
-                    <th>الكمية المتاحة</th>
                     <th>المورد</th>
-                    <th>الباركود</th>
+                    <th>الوحدات</th>
                     <th>الإجراءات</th>
                 </tr>
             </thead>
@@ -26,15 +22,60 @@
                 {% for product in products %}
                 <tr>
                     <td>{{ product.name }}</td>
-                    <td>{{ product.category }}</td>
-                    <td>{{ product.big_unit_sell_price }} جنيه ({{ product.big_unit.name }})</td>
-                    <td>{{ product.small_unit_sell_price }} جنيه ({{ product.small_unit.name }})</td>
-                    <td>{{ product.get_total_stock_small_units }} {{ product.small_unit.name }}</td>
-                    <td>{{ product.supplier }}</td>
-                    <td>{{ product.barcode }}</td>
+                    <td>{{ product.supplier  }}</td>
+                    <td>{{ product.kind }}</td>
+                    <td>
+                        <!-- Button to toggle unit levels -->
+                        <button class="btn btn-info btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#units-{{ product.id }}" aria-expanded="false" aria-controls="units-{{ product.id }}">
+                            عرض الوحدات
+                        </button>
+                    </td>
                     <td>
                         <a href="{% url 'stock:product_update' product.id %}" class="btn btn-warning text-white btn-sm">تعديل</a>
                         <a href="{% url 'stock:product_delete' product.id %}" class="btn btn-danger btn-sm">حذف</a>
+                    </td>
+                </tr>
+                <!-- Collapsible row for unit details -->
+                <tr>
+                    <td colspan="6" class="p-0 border-0">
+                        <div class="collapse" id="units-{{ product.id }}">
+                            <div class="collapse" id="collapseExample">
+                                <div class="card card-body">
+                                  Some placeholder content for the collapse component. This panel is hidden by default but revealed when the user activates the relevant trigger.
+                                </div>
+                              </div>
+                            <div class="card card-body">
+                                <h5 class="card-title">وحدات المنتج</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered text-center">
+                                        <thead class="table-secondary">
+                                            <tr>
+                                                <th>المستوى</th>
+                                                <th>الوحدة</th>
+                                                <th>عامل التحويل</th>
+                                                <th>سعر التكلفة</th>
+                                                <th>سعر البيع</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for unit in product.units.all %}
+                                            <tr>
+                                                <td>{{ unit.level }}</td>
+                                                <td>{{ unit.unit.name }}</td>
+                                                <td>{{ unit.conversion_factor }}</td>
+                                                <td>{{ unit.cost_price }} جنيه</td>
+                                                <td>{{ unit.sell_price }} جنيه</td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="5">لا توجد وحدات لهذا المنتج</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -42,5 +83,9 @@
         </table>
     </div>
 </div>
+{% endblock %} 
+
+{% block extra_js %}
+
 
 {% endblock %}

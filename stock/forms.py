@@ -1,33 +1,31 @@
 from django import forms
-from.models import Product, StockEntry
+from .models import Unit, Product, ProductUnit
+
+class UnitForm(forms.ModelForm):
+    class Meta:
+        model = Unit
+        fields = ['name']
+        labels = {'name': "اسم الوحدة"}
 
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = ['name', 'base_unit', 'supplier', 'kind']
         labels = {
             'name': "اسم المنتج",
-            'category': "التصنيف",
+            'base_unit': "الوحدة الأساسية",
             'supplier': "المورد",
-            'big_unit': "الوحدة الكبيرة",
-            'big_unit_cost_price': "سعر التكلفة للوحدة الكبيرة",
-            'big_unit_sell_price': "سعر البيع للوحدة الكبيرة",
-            'small_unit': "الوحدة الصغيرة",
-            'small_units_counts': "عدد الوحدات الصغيرة في الكبيرة",
-            'small_unit_cost_price': "سعر التكلفة للوحدة الصغيرة",
-            'small_unit_sell_price': "سعر البيع للوحدة الصغيرة",
-            'stock_quantity_big': "الكمية ",
-            'barcode': "الباركود",
+            'kind': "التصنيف"
         }
 
-class StockEntryForm(forms.ModelForm):
+class ProductUnitForm(forms.ModelForm):
     class Meta:
-        model = StockEntry
-        fields = '__all__'
+        model = ProductUnit
+        fields = ['unit', 'level', 'conversion_factor', 'cost_price', 'sell_price']
         labels = {
-            'product': "المنتج",
-            'quantity': "الكمية",
             'unit': "الوحدة",
-            'transaction_type': "نوع العملية",
-            'date': "التاريخ",
+            'level': "المستوى",
+            'conversion_factor': "عامل التحويل",
+            'cost_price': "سعر التكلفة",
+            'sell_price': "سعر البيع",
         }

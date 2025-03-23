@@ -1,0 +1,12 @@
+{% extends "core/base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4">حذف الفاتورة</h2>
+    <p class="text-center">هل أنت متأكد من حذف الفاتورة رقم {{ invoice.id }}؟</p>
+    <form method="post" class="text-center">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">حذف</button>
+        <a href="{% url 'seller:invoice_list' %}" class="btn btn-secondary">إلغاء</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,201 @@
+{% extends "core/base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4">
+        {% if form.instance.pk %}تعديل الفاتورة{% else %}إنشاء فاتورة جديدة{% endif %}
+    </h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            {{ form.as_p }}
+        </div>
+        <h4 class="mt-4">تفاصيل الفاتورة</h4>
+        {{ formset.management_form }}
+        <div id="invoice-items">
+            {% for form_item in formset %}
+            <div class="card mb-3 invoice-item-row">
+                <div class="card-body">
+                    <div style="display: none;">
+                        {{ form_item.id.as_hidden }}
+
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            {{ form_item.product.label_tag }} 
+                            {{ form_item.product }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form_item.product_unit.label_tag }} 
+                            {{ form_item.product_unit }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form_item.quantity.label_tag }} 
+                            {{ form_item.quantity }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form_item.price_per_unit.label_tag }} 
+                            {{ form_item.price_per_unit }}
+                        </div>
+                        <div class="col-md-2">
+                            <label>الإجمالي للصف</label>
+                            <input type="text" class="form-control line-total" readonly>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col text-end">
+                            <button type="button" class="btn btn-danger remove-row">حذف الصف</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="d-flex justify-content-end mb-3">
+            <button type="button" id="add-row" class="btn btn-secondary">إضافة صف</button>
+        </div>
+        <button type="submit" class="btn btn-primary">حفظ</button>
+        <a href="{% url 'seller:invoice_list' %}" class="btn btn-secondary">إلغاء</a>
+    </form>
+</div>
+
+<!-- Hidden template for a new invoice item row -->
+<div id="empty-form-template" class="d-none">
+    <div class="card mb-3 invoice-item-row">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="id_items-__prefix__-product">المنتج:</label> 
+                    {{ formset.empty_form.product }}
+                </div>
+                <div class="col-md-3">
+                    <label for="id_items-__prefix__-product_unit">الوحدة:</label> 
+                    {{ formset.empty_form.product_unit }}
+                </div>
+                <div class="col-md-2">
+                    <label for="id_items-__prefix__-quantity">Quantity:</label> 
+                    {{ formset.empty_form.quantity }}
+                </div>
+                <div class="col-md-2">
+                    <label for="id_items-__prefix__-price_per_unit">Price per unit:</label> 
+                    {{ formset.empty_form.price_per_unit }}
+                </div>
+                <div class="col-md-2">
+                    <label>الإجمالي للصف</label>
+                    <input type="text" class="form-control line-total" readonly>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col text-end">
+                    <button type="button" class="btn btn-danger remove-row">حذف الصف</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+document.addEventListener('DOMContentLoaded', function(){
+
+    // Calculate the row total (quantity * price)
+    function calculateRowTotal(row) {
+        let quantity = parseFloat(row.querySelector('input[name$="-quantity"]').value) || 0;
+        let price = parseFloat(row.querySelector('input[name$="-price_per_unit"]').value) || 0;
+        let totalField = row.querySelector('.line-total');
+        totalField.value = (quantity * price).toFixed(2);
+    }
+    
+    // Bind events for dynamic behavior for a given invoice row
+    function bindRowEvents(row) {
+        // When product is selected, load available units via AJAX
+        let productSelect = row.querySelector('select[name$="-product"]');
+        if(productSelect) {
+            productSelect.addEventListener('change', function(){
+                let productId = this.value;
+                let unitSelect = row.querySelector('select[name$="-product_unit"]');
+                // Clear existing options
+                unitSelect.innerHTML = '<option value="">اختر الوحدة</option>';
+                // Fetch available units from backend endpoint
+                fetch(`/seller/get_product_units/?product_id=${productId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.units.forEach(function(unit){
+                        let option = document.createElement('option');
+                        option.value = unit.id;
+                        option.textContent = `${unit.unit__name} (عامل: ${unit.conversion_factor})`;
+                        unitSelect.appendChild(option);
+                    });
+                });
+            });
+        }
+        
+        // When a unit is selected, fetch its price via AJAX and update the price field
+        let unitSelect = row.querySelector('select[name$="-product_unit"]');
+        if(unitSelect) {
+            unitSelect.addEventListener('change', function(){
+                let unitId = this.value;
+                let productId = row.querySelector('select[name$="-product"]').value;
+                let priceField = row.querySelector('input[name$="-price_per_unit"]');
+                if(productId && unitId){
+                    fetch(`/seller/get_product_price/?product_id=${productId}&product_unit_id=${unitId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        priceField.value = data.price;
+                        calculateRowTotal(row);
+                    });
+                }
+            });
+        }
+        
+        // When quantity changes, recalculate the row total
+        let quantityField = row.querySelector('input[name$="-quantity"]');
+        if(quantityField) {
+            quantityField.addEventListener('input', function(){
+                calculateRowTotal(row);
+            });
+        }
+        
+        // Remove row event
+        let removeButton = row.querySelector('.remove-row');
+        if(removeButton) {
+            removeButton.addEventListener('click', function(){
+                row.remove();
+                updateManagementFormCount();
+            });
+        }
+    }
+    
+    // Update TOTAL_FORMS value in management form
+    function updateManagementFormCount() {
+        let formCountInput = document.querySelector('#id_form-TOTAL_FORMS');
+        let rows = document.querySelectorAll('.invoice-item-row');
+        formCountInput.value = rows.length;
+    }
+    
+    // Bind events to all existing rows
+    document.querySelectorAll('.invoice-item-row').forEach(function(row){
+        bindRowEvents(row);
+    });
+    
+    // Add new row dynamically
+        document.getElementById('add-row').addEventListener('click', function(){
+        let template = document.getElementById('empty-form-template').innerHTML;
+        let newDiv = document.createElement('div');
+        newDiv.innerHTML = template;
+        let newRow = newDiv.firstElementChild;
+        // Update form indices for new row fields
+        let totalFormsInput = document.getElementById('id_items-TOTAL_FORMS');
+        let currentCount = parseInt(totalFormsInput.value);
+        newRow.querySelectorAll('input, select, textarea').forEach(function(input){
+            if(input.name){
+                input.name = input.name.replace(/__prefix__/g, currentCount);
+                input.id = input.id.replace(/__prefix__/g, currentCount);
+            }
+        });
+        document.getElementById('invoice-items').appendChild(newRow);
+        totalFormsInput.value = currentCount + 1;
+        bindRowEvents(newRow);
+    });
+});
+{% endblock %}

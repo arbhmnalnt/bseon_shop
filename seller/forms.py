@@ -1,21 +1,25 @@
 from django import forms
 from .models import Invoice, InvoiceItem
-from stock.models import Product, Unit
+from stock.models import Product, ProductUnit
 
 class InvoiceForm(forms.ModelForm):
     class Meta:
         model = Invoice
         fields = ['customer_name']
+        labels = {
+            'customer_name': "اسم العميل"
+        }
 
 class InvoiceItemForm(forms.ModelForm):
     product = forms.ModelChoiceField(
         queryset=Product.objects.all(),
-        label="Product",
+        label="المنتج",
         widget=forms.Select(attrs={'class': 'form-control select-product'})
     )
-    unit = forms.ModelChoiceField(
-        queryset=Unit.objects.all(),
-        label="Unit",
+    # This field will be populated dynamically based on the selected product.
+    product_unit = forms.ModelChoiceField(
+        queryset=ProductUnit.objects.none(),
+        label="الوحدة",
         widget=forms.Select(attrs={'class': 'form-control select-unit'})
     )
     quantity = forms.IntegerField(
@@ -24,7 +28,11 @@ class InvoiceItemForm(forms.ModelForm):
     price_per_unit = forms.DecimalField(
         widget=forms.TextInput(attrs={'class': 'form-control price-field', 'readonly': 'readonly'})
     )
-    
+
     class Meta:
         model = InvoiceItem
-        fields = ['product', 'unit', 'quantity', 'price_per_unit']
+        # Include 'id' so that existing items are recognized during updates.
+        fields = ['id', 'product', 'product_unit', 'quantity', 'price_per_unit']
+        widgets = {
+            'id': forms.HiddenInput()
+        }

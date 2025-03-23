@@ -44,7 +44,6 @@ INSTALLED_APPS = [
       'reports',
       'users',
     #
-      'report_builder',
       'import_export'
 ]
 
