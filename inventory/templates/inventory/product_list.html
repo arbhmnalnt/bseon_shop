@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h2 class="my-4 text-center">قائمة المنتجات</h2>
+
+  <div class="d-flex justify-content-end mb-3">
+    <a href="{% url 'product_create' %}" class="btn btn-success">إضافة منتج جديد</a>
+    <a href="{% url 'add_product_unit' %}" class="btn btn-outline-primary ms-2">إضافة وحدة منتج</a>
+  </div>
+
+  <table class="table table-bordered table-hover text-center">
+    <thead class="table-light">
+      <tr>
+        <th>الاسم</th>
+        <th>التصنيف</th>
+        <th>الوحدات والكميات</th>
+        <th>الإجراءات</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for product in products %}
+      <tr>
+        <td>{{ product.name }}</td>
+        <td>{{ product.category }}</td>
+        <td>
+          {% for unit in product.units.all %}
+            <span>{{ unit.unit.name }} - {{ unit.quantity }} ({{ unit.sell_price }} ج)</span><br>
+          {% endfor %}
+        </td>
+        <td>
+          <a href="{% url 'product_detail' product.id %}" class="btn btn-info btn-sm">عرض</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" class="text-muted">لا توجد منتجات حالياً.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
