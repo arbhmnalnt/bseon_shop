@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h2 class="my-4 text-center">أعلى 10 منتجات من حيث الإيرادات</h2>
+  <ul class="list-group">
+    {% for row in data %}
+    <li class="list-group-item d-flex justify-content-between">
+      {{ row.name }}
+      <span>{{ row.revenue }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

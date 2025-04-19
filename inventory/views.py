@@ -4,16 +4,40 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from .models import Product, ProductUnit
 from .forms import ProductForm, ProductUnitForm
+from purchases.models import PurchaseItem
+from sales.models import SaleItem
 
 # عرض قائمة المنتجات
 def product_list(request):
-    products = Product.objects.all()
+    # prefetch units so we can sum quantities
+    products = Product.objects.prefetch_related('units').all()
+    # attach a total_quantity attribute to each product
+    for p in products:
+        p.total_quantity = sum(u.quantity for u in p.units.all())
     return render(request, 'inventory/product_list.html', {'products': products})
 
 # عرض تفاصيل منتج
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk)
-    return render(request, 'inventory/product_detail.html', {'product': product})
+    # all purchase items for any unit of this product
+    purchase_history = (
+        PurchaseItem.objects
+        .filter(product_unit__product=product)
+        .select_related('purchase', 'product_unit')
+        .order_by('-purchase__date')
+    )
+    # all sale items for any unit of this product
+    sale_history = (
+        SaleItem.objects
+        .filter(product_unit__product=product)
+        .select_related('sale', 'product_unit')
+        .order_by('-sale__date')
+    )
+    return render(request, 'inventory/product_detail.html', {
+        'product': product,
+        'purchase_history': purchase_history,
+        'sale_history': sale_history,
+    })
 
 # إنشاء منتج جديد ثم تحويل لإضافة وحدات له
 def product_create(request):

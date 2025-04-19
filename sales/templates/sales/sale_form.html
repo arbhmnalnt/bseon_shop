@@ -3,8 +3,8 @@
 {% block content %}
 <div class="container">
   <div class="card shadow-sm my-4">
-    <div class="card-header text-center">
-      <h2>
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 class="mb-0">
         {% if sale %}تعديل فاتورة بيع{% else %}فاتورة بيع جديدة{% endif %}
       </h2>
     </div>
@@ -31,60 +31,48 @@
         <!-- Line Items Header -->
         <h5 class="mt-4">بنود الفاتورة</h5>
         {{ formset.management_form }}
-        <div class="row g-3 align-items-end mb-1 fw-bold">
+        <div class="row g-3 align-items-end mb-1 fw-bold text-center">
           <div class="col-md-4">المنتج / الوحدة</div>
           <div class="col-md-2">الكمية</div>
           <div class="col-md-2">السعر</div>
           <div class="col-md-2">المجموع</div>
-          <div class="col-md-2">إجراءات</div>
+          <div class="col-md-2">حذف</div>
         </div>
 
         <!-- Line Items -->
         <div id="items">
           {% for item in formset %}
           <div class="row g-3 align-items-end mb-2 sale-row">
-            <!-- ProductUnit Select -->
             <div class="col-md-4">
               {{ item.product_unit|add_class:"form-control js-select2" }}
             </div>
-            <!-- Quantity -->
             <div class="col-md-2">
               {{ item.quantity|add_class:"form-control qty-input" }}
             </div>
-            <!-- Price -->
             <div class="col-md-2">
               {{ item.price|add_class:"form-control price-input" }}
             </div>
-            <!-- Line Total (read‑only) -->
             <div class="col-md-2">
-              <input type="number"
-                     class="form-control line-total"
-                     readonly
-                     step="any"
-                     value="0">
+              <input type="number" class="form-control line-total" readonly step="any" value="0">
             </div>
-            <!-- Remove -->
             <div class="col-md-2 text-center">
               <button type="button" class="btn btn-outline-danger remove-item">&times;</button>
             </div>
-            <!-- Hidden fields -->
             {{ item.id }} {{ item.DELETE }}
           </div>
           {% endfor %}
         </div>
 
-        <!-- Add Line -->
-        <button id="add-item" type="button" class="btn btn-outline-primary mt-3 mb-4">
-          إضافة بند جديد
-        </button>
-
-        <!-- Invoice Total Display -->
-        <div class="text-end">
-          <h5>الإجمالي الكلي: <span id="invoice-total">0.00</span> ج</h5>
+        <!-- Add Line & Invoice Total -->
+        <div class="d-flex justify-content-between mt-3 mb-4">
+          <button id="add-item" type="button" class="btn btn-outline-primary">
+            + إضافة بند جديد
+          </button>
+          <h5 class="me-3">الإجمالي الكلي: <span id="invoice-total">0.00</span> ج</h5>
         </div>
 
         <!-- Submit -->
-        <div class="text-center mt-3">
+        <div class="text-center">
           <button type="submit" class="btn btn-success px-5">حفظ الفاتورة</button>
         </div>
       </form>
@@ -94,108 +82,131 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- Price lookup map -->
-<script>
-  const priceMap = {
-    {% for pu in product_units %}
-      "{{ pu.id }}": "{{ pu.sell_price }}"{% if not forloop.last %},{% endif %}
-    {% endfor %}
-  };
-</script>
+  <!-- jQuery & Select2 -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const itemsDiv   = document.getElementById('items');
-  const totalForms = document.querySelector('input[name="{{ formset.prefix }}-TOTAL_FORMS"]');
-  const addBtn     = document.getElementById('add-item');
-  const invoiceEl  = document.getElementById('invoice-total');
+  <!-- Data maps -->
+  {{ price_map|json_script:"price-data" }}
+  {{ stock_map|json_script:"stock-data" }}
 
-  // Helper to recalc one row and return its total
-  function updateRowTotals(row) {
-    const qty   = parseFloat(row.querySelector('.qty-input').value) || 0;
-    const price = parseFloat(row.querySelector('.price-input').value) || 0;
-    const lineTotal = qty * price;
-    row.querySelector('.line-total').value = lineTotal.toFixed(2);
-    return lineTotal;
-  }
+  <script>
+  $(function() {
+    const priceMap   = JSON.parse($('#price-data').text());
+    const stockMap   = JSON.parse($('#stock-data').text());
+    const $itemsDiv  = $('#items');
+    const $totalForms= $('input[name="{{ formset.prefix }}-TOTAL_FORMS"]');
+    const $addBtn    = $('#add-item');
+    const $invoiceEl = $('#invoice-total');
 
-  // Recalc all and update invoice total
-  function updateInvoiceTotal() {
-    let sum = 0;
-    itemsDiv.querySelectorAll('.sale-row').forEach(function(row) {
-      if (row.style.display === 'none') return;
-      sum += updateRowTotals(row);
-    });
-    invoiceEl.textContent = sum.toFixed(2);
-  }
-
-  // Bind change on existing rows
-  function bindRow(row) {
-    const selectPU = row.querySelector('select.js-select2');
-    const qtyIn    = row.querySelector('.qty-input');
-    const priceIn  = row.querySelector('.price-input');
-
-    // Auto‑price on select change
-    selectPU.addEventListener('change', function() {
-      const puId = this.value;
-      if (priceMap[puId] !== undefined) {
-        priceIn.value = priceMap[puId];
-      }
-      updateInvoiceTotal();
-    });
-    // Recalc on qty/price change
-    [qtyIn, priceIn].forEach(function(el) {
-      el.addEventListener('input', updateInvoiceTotal);
-    });
-  }
-
-  // Initial binding
-  itemsDiv.querySelectorAll('.sale-row').forEach(bindRow);
-  updateInvoiceTotal();
-
-  // Add new line
-  addBtn.addEventListener('click', function() {
-    const formCount = parseInt(totalForms.value, 10);
-    const firstRow  = itemsDiv.querySelector('.sale-row');
-    const newRow    = firstRow.cloneNode(true);
-
-    // Update names & IDs
-    newRow.querySelectorAll('input, select').forEach(function(field) {
-      const name = field.name;
-      if (!name) return;
-      const newName = name.replace('-0-', '-' + formCount + '-');
-      field.name = newName;
-      field.id   = 'id_' + newName;
-      if (field.classList.contains('line-total')) {
-        field.value = '0.00';
-      } else {
-        field.value = '';
-      }
-      if (field.type === 'checkbox') field.checked = false;
-    });
-
-    totalForms.value = formCount + 1;
-    itemsDiv.appendChild(newRow);
-
-    // Re‑init Select2 on the new select
-    if (window.$ && $.fn.select2) {
-      $(newRow).find('select.js-select2')
-        .select2({width:'100%', placeholder:'اختر...', allowClear:true, dir:'rtl'});
+    // Calculate one row total
+    function updateRow($row) {
+      const qty   = parseFloat($row.find('.qty-input').val()) || 0;
+      const price = parseFloat($row.find('.price-input').val()) || 0;
+      const total = qty * price;
+      $row.find('.line-total').val(total.toFixed(2));
+      return total;
     }
 
-    // Bind events on the new row
-    bindRow(newRow);
-  });
+    // Calculate full invoice total
+    function updateInvoice() {
+      let sum = 0;
+      $itemsDiv.find('.sale-row').each(function() {
+        const $r = $(this);
+        if ($r.is(':visible')) sum += updateRow($r);
+      });
+      $invoiceEl.text(sum.toFixed(2));
+    }
 
-  // Remove line
-  itemsDiv.addEventListener('click', function(e) {
-    if (!e.target.classList.contains('remove-item')) return;
-    const row = e.target.closest('.sale-row');
-    const del = row.querySelector('input[type="checkbox"]');
-    if (del) del.checked = true;
-    row.style.display = 'none';
-    updateInvoiceTotal();
+    // Bind a sale-row for price, stock, and recalculation
+    function bindRow($row) {
+      const $pu    = $row.find('select.js-select2');
+      const $qty   = $row.find('.qty-input');
+      const $price = $row.find('.price-input');
+      let $badge   = $row.find('.stock-badge');
+      if (!$badge.length) {
+        $badge = $('<small class="d-block text-secondary stock-badge"></small>');
+        $pu.parent().append($badge);
+      }
+      $pu.on('change', function() {
+        const id = $(this).val();
+        if (priceMap[id] !== undefined)   $price.val(priceMap[id]);
+        if (stockMap[id] !== undefined)   $badge.text('رصيد: ' + stockMap[id]);
+        updateInvoice();
+      });
+      $qty.add($price).on('input', updateInvoice);
+    }
+
+    // Initialize Select2 with icons & trimmed labels
+    $('select.js-select2').select2({
+      width: '100%',
+      placeholder: 'اختر…',
+      allowClear: true,
+      dir: 'rtl',
+      templateResult: function(d) {
+        if (!d.id) return d.text;
+        return $('<span><i class="fas fa-boxes me-2"></i>' + d.text + '</span>');
+      },
+      templateSelection: function(d) {
+        if (!d.id) return d.text;
+        return d.text.split(' (')[0];
+      },
+      dropdownCssClass: 'select2-bootstrap-dropdown'
+    });
+
+    // Bind existing rows & compute initial total
+    $('.sale-row').each(function() {
+      bindRow($(this));
+    });
+    updateInvoice();
+
+    // Add new line
+    $addBtn.on('click', function() {
+      let idx = parseInt($totalForms.val(), 10);
+      const $first = $itemsDiv.find('.sale-row').first();
+      const $new   = $first.clone();
+      $new.find('input,select').each(function() {
+        const $f = $(this);
+        const name = $f.attr('name');
+        if (!name) return;
+        const newName = name.replace('-0-', '-' + idx + '-');
+        $f.attr({name: newName, id: 'id_' + newName});
+        if ($f.is('.line-total')) $f.val('0.00');
+        else $f.val('');
+        if ($f.is(':checkbox')) $f.prop('checked', false);
+      });
+      $totalForms.val(idx + 1);
+      $itemsDiv.append($new);
+
+      // init select2 & bind
+      const $sel = $new.find('select.js-select2');
+      $sel.select2({
+        width: '100%',
+        placeholder: 'اختر…',
+        allowClear: true,
+        dir: 'rtl',
+        templateResult: function(d) {
+          if (!d.id) return d.text;
+          return $('<span><i class="fas fa-boxes me-2"></i>' + d.text + '</span>');
+        },
+        templateSelection: function(d) {
+          if (!d.id) return d.text;
+          return d.text.split(' (')[0];
+        },
+        dropdownCssClass: 'select2-bootstrap-dropdown'
+      });
+      bindRow($new);
+      updateInvoice();
+    });
+
+    // Remove a line
+    $itemsDiv.on('click', '.remove-item', function() {
+      const $row = $(this).closest('.sale-row');
+      const $del = $row.find('input[type="checkbox"]');
+      if ($del.length) $del.prop('checked', true);
+      $row.hide();
+      updateInvoice();
+    });
   });
-});
-</script>
+  </script>
 {% endblock %}

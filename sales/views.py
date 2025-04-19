@@ -5,6 +5,7 @@ from .forms import SaleForm, SaleItemFormSet
 from inventory.models import ProductUnit
 
 
+
 def sale_list(request):
     sales = Sale.objects.all().order_by('-date')
     return render(request, 'sales/sale_list.html', {'sales': sales})
@@ -31,12 +32,12 @@ def sale_create(request):
     else:
         form    = SaleForm()
         formset = SaleItemFormSet()
-    product_units = ProductUnit.objects.select_related('product','unit').all()
+    product_units = ProductUnit.objects.select_related('product','unit')
+    price_map = {pu.id: float(pu.sell_price) for pu in product_units}
+    stock_map = {pu.id: float(pu.quantity)   for pu in product_units}
     return render(request, 'sales/sale_form.html', {
-        'form': form,
-        'formset': formset,
-        'sale': None,
-        'product_units': product_units
+        'form': form, 'formset': formset, 'sale': None,
+        'price_map': price_map, 'stock_map': stock_map
     })
 
 def sale_edit(request, pk):
@@ -57,12 +58,12 @@ def sale_edit(request, pk):
     else:
         form    = SaleForm(instance=sale)
         formset = SaleItemFormSet(instance=sale)
-    product_units = ProductUnit.objects.select_related('product','unit').all()
+    product_units = ProductUnit.objects.select_related('product','unit')
+    price_map = {pu.id: float(pu.sell_price) for pu in product_units}
+    stock_map = {pu.id: float(pu.quantity)   for pu in product_units}
     return render(request, 'sales/sale_form.html', {
-        'form': form,
-        'formset': formset,
-        'sale': sale,
-        'product_units': product_units
+        'form': form, 'formset': formset, 'sale': None,
+        'price_map': price_map, 'stock_map': stock_map
     })
 
 def sale_delete(request, pk):

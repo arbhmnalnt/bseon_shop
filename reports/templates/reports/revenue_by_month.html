@@ -1,0 +1,98 @@
+<!-- templates/reports/revenue_by_month.html -->
+
+{% extends "base.html" %}
+{% load report_tags %}
+
+{% block content %}
+<div class="container">
+  <h2 class="my-4 text-center">الإيرادات الشهرية</h2>
+
+  {# 1. Embed JSON data #}
+  {{ data|pluck:"month"|json_script:"months" }}
+  {{ data|pluck:"total" |json_script:"totals" }}
+
+  <div class="card shadow-sm p-4 mb-4">
+    <div class="row">
+      <!-- Chart -->
+      <div class="col-md-8">
+        <canvas id="chart-monthly"></canvas>
+      </div>
+
+      <!-- Table -->
+      <div class="col-md-4">
+        <h5 class="mb-3 text-center">تفاصيل الإيرادات</h5>
+        <div class="table-responsive" style="max-height:400px;overflow:auto">
+          <table class="table table-striped table-sm text-center">
+            <thead class="table-light">
+              <tr>
+                <th>الشهر</th>
+                <th>الإيرادات (ج)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in data %}
+              <tr>
+                <td>{{ row.month|date:"Y-m" }}</td>
+                <td>{{ row.total }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="2" class="text-muted">لا توجد بيانات.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script>
+  // 2. Parse our embedded JSON
+  const rawMonths = JSON.parse(document.getElementById('months').textContent);
+  const totals    = JSON.parse(document.getElementById('totals').textContent);
+
+  // Convert each ISO string into a real Date (1st of month)
+  const labels = rawMonths.map(m => new Date(m));
+
+  // 3. Render the Chart.js line chart
+  const ctx = document.getElementById('chart-monthly').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'الإيرادات الشهرية (جنيه)',
+        data: totals,
+        fill: false,
+        tension: 0.1,
+        borderColor: '#0d6efd',
+        pointBackgroundColor: '#0d6efd'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ` ${ctx.formattedValue} ج` }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time',
+          time: { unit: 'month', tooltipFormat: 'yyyy-MM' },
+          title: { display: true, text: 'الشهر' }
+        },
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'الإيرادات (جنيه)' }
+        }
+      }
+    }
+  });
+</script>
+{% endblock scripts %}

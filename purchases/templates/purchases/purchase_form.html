@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% load form_tags %}
+{% block content %}
+<div class="container">
+  <div class="card shadow-sm my-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 class="mb-0">{% if purchase %}تعديل فاتورة شراء{% else %}فاتورة شراء جديدة{% endif %}</h2>
+      <!-- Quick link to add supplier -->
+      <a href="{% url 'supplier_create' %}" target="_blank" class="btn btn-outline-secondary btn-sm">
+        + إضافة مورد جديد
+      </a>
+    </div>
+    <div class="card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <!-- Supplier & Date -->
+        <div class="row g-3 align-items-end mb-4">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">{{ form.supplier.label }}</label>
+            {{ form.supplier|add_class:"form-control js-select2" }}
+            {% if form.supplier.errors %}
+              <div class="text-danger small">{{ form.supplier.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-bold">{{ form.date.label }}</label>
+            {{ form.date|add_class:"form-control" }}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-bold">{{ form.notes.label }}</label>
+            {{ form.notes|add_class:"form-control" }}
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- Line Items Table -->
+        <h5 class="mt-4">بنود الشراء</h5>
+        {{ formset.management_form }}
+        <div class="table-responsive">
+          <table class="table table-bordered" id="purchase-table">
+            <thead class="table-light">
+              <tr>
+                <th>المنتج / الوحدة</th>
+                <th>الكمية</th>
+                <th>سعر الوحدة</th>
+                <th>المجموع</th>
+                <th>حذف</th>
+              </tr>
+            </thead>
+            <tbody id="items">
+              {% for item in formset %}
+              <tr class="purchase-row">
+                <td>
+                  {{ item.product_unit|add_class:"form-control js-select2 form-select-sm" }}
+                </td>
+                <td>
+                  {{ item.quantity|add_class:"form-control form-control-sm qty-input" }}
+                </td>
+                <td>
+                  {{ item.price|add_class:"form-control form-control-sm price-input" }}
+                </td>
+                <td>
+                  <input type="number" class="form-control form-control-sm line-total" readonly step="any" value="0">
+                </td>
+                <td class="text-center">
+                  <button type="button" class="btn btn-sm btn-outline-danger remove-item">&times;</button>
+                </td>
+                {{ item.id }} {{ item.DELETE }}
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr>
+                <th colspan="3" class="text-end">الإجمالي الكلي:</th>
+                <th>
+                  <input type="text" id="invoice-total" class="form-control form-control-sm" readonly value="0.00">
+                </th>
+                <th></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="d-flex justify-content-between mt-3">
+          <button id="add-item" type="button" class="btn btn-outline-primary">
+            + إضافة بند جديد
+          </button>
+          <button type="submit" class="btn btn-success px-5">
+            حفظ الفاتورة
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Select2 & priceMap are assumed loaded already in base.html -->
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const itemsDiv   = document.getElementById('items');
+  const totalForms = document.querySelector('input[name="{{ formset.prefix }}-TOTAL_FORMS"]');
+  const addBtn     = document.getElementById('add-item');
+  const invoiceEl  = document.getElementById('invoice-total');
+
+  // Helper: recalc one row's total
+  function updateRow(row){
+    const qty   = parseFloat(row.querySelector('.qty-input').value)||0;
+    const price = parseFloat(row.querySelector('.price-input').value)||0;
+    const total = qty * price;
+    row.querySelector('.line-total').value = total.toFixed(2);
+    return total;
+  }
+  // Recalc invoice
+  function updateInvoice(){
+    let sum = 0;
+    document.querySelectorAll('.purchase-row').forEach(r=>{
+      if(r.style.display!=='none') sum += updateRow(r);
+    });
+    invoiceEl.value = sum.toFixed(2);
+  }
+
+  // Auto‐price & bindings
+  function bindRow(row){
+    const selectPU = row.querySelector('select.js-select2');
+    const qtyIn    = row.querySelector('.qty-input');
+    const priceIn  = row.querySelector('.price-input');
+
+    // on select, fill price
+    selectPU.addEventListener('change', ()=>{
+      const id = selectPU.value;
+      if(priceMap[id] !== undefined) priceIn.value = priceMap[id];
+      updateInvoice();
+    });
+    // on qty or price change, recalc
+    [qtyIn, priceIn].forEach(el=>el.addEventListener('input', updateInvoice));
+
+    // keyboard: Enter on price adds new row
+    priceIn.addEventListener('keydown', e=>{
+      if(e.key==='Enter'){
+        e.preventDefault();
+        addBtn.click();
+        // focus new row's quantity
+        const lastQty = itemsDiv.querySelectorAll('.qty-input');
+        lastQty[lastQty.length-1].focus();
+      }
+    });
+  }
+
+  // Initial bind
+  itemsDiv.querySelectorAll('.purchase-row').forEach(bindRow);
+  updateInvoice();
+
+  // Add new row
+  addBtn.addEventListener('click', function(){
+    let idx = parseInt(totalForms.value,10);
+    const first = itemsDiv.querySelector('.purchase-row');
+    const newRow = first.cloneNode(true);
+
+    newRow.querySelectorAll('input,select').forEach(f=>{
+      if(!f.name) return;
+      const newName = f.name.replace('-0-','-'+idx+'-');
+      f.name=newName; 
+      f.id='id_'+newName;
+      if(f.classList.contains('line-total')) f.value='0.00';
+      else f.value='';
+      if(f.type==='checkbox') f.checked=false;
+    });
+    totalForms.value = idx+1;
+    itemsDiv.appendChild(newRow);
+    // re-init Select2 on the new select
+    $(newRow).find('select.js-select2').select2({width:'100%', placeholder:'اختر...', allowClear:true, dir:'rtl'});
+    bindRow(newRow);
+    updateInvoice();
+  });
+
+  // Remove row
+  itemsDiv.addEventListener('click', e=>{
+    if(!e.target.classList.contains('remove-item')) return;
+    const row = e.target.closest('.purchase-row');
+    const del = row.querySelector('input[type="checkbox"]');
+    if(del) del.checked=true;
+    row.style.display='none';
+    updateInvoice();
+  });
+
+  // init Select2 & priceMap
+  $('select.js-select2').select2({width:'100%', placeholder:'اختر...', allowClear:true, dir:'rtl'});
+});
+</script>
+{% endblock %}

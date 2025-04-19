@@ -1,10 +1,11 @@
 from django.db import models
 from suppliers.models import Supplier
 from inventory.models import ProductUnit
+from django.utils import timezone
 
 class Purchase(models.Model):
     supplier   = models.ForeignKey(Supplier, on_delete=models.PROTECT, verbose_name="المورد")
-    date       = models.DateField(auto_now_add=True, verbose_name="تاريخ الشراء")
+    date       = models.DateField(default=timezone.localdate, verbose_name="تاريخ الشراء")
     total      = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="الإجمالي")
     notes      = models.TextField(blank=True, null=True, verbose_name="ملاحظات")
 

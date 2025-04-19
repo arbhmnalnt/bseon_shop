@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h2 class="my-4 text-center">تنبيهات نفاد المخزون (أقل من {{ threshold }})</h2>
+  <table class="table table-bordered text-center">
+    <thead class="table-light">
+      <tr><th>منتج</th><th>وحدة</th><th>كمية</th></tr>
+    </thead>
+    <tbody>
+      {% for pu in data %}
+      <tr>
+        <td>{{ pu.product.name }}</td>
+        <td>{{ pu.unit.name }}</td>
+        <td>{{ pu.quantity }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="3">لا توجد وحدات منخفضة المخزون.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

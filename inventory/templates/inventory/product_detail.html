@@ -19,10 +19,10 @@
     <thead class="table-light">
       <tr>
         <th>الوحدة</th>
-        <th>الكمية</th>
+        <th>المستوى</th>
         <th>سعر التكلفة</th>
         <th>سعر البيع</th>
-        <th>المستوى</th>
+        <th>رصيد حالي</th>
         <th>إجراءات</th>
       </tr>
     </thead>
@@ -30,10 +30,10 @@
       {% for unit in product.units.all %}
       <tr>
         <td>{{ unit.unit.name }}</td>
-        <td>{{ unit.quantity }}</td>
+        <td>{{ unit.level }}</td>
         <td>{{ unit.cost_price }}</td>
         <td>{{ unit.sell_price }}</td>
-        <td>{{ unit.level }}</td>
+        <td>{{ unit.quantity }}</td>
         <td>
           <a href="{% url 'edit_product_unit' unit.id %}" class="btn btn-sm btn-outline-primary">تعديل</a>
           <a href="{% url 'delete_product_unit' unit.id %}" class="btn btn-sm btn-outline-danger">حذف</a>
@@ -41,14 +41,76 @@
       </tr>
       {% empty %}
       <tr>
-        <td colspan="6" class="text-muted">لا توجد وحدات مضافة لهذا المنتج.</td>
+        <td colspan="6" class="text-muted">لا توجد وحدات هذا المنتج.</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+
+  <!-- History Tabs -->
+  <h4 class="mt-5 mb-3 text-center">سجل العمليات</h4>
+  <ul class="nav nav-tabs" id="historyTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="purchases-tab" data-bs-toggle="tab" data-bs-target="#purchases" type="button" role="tab">
+        المشتريات
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales" type="button" role="tab">
+        المبيعات
+      </button>
+    </li>
+  </ul>
+  <div class="tab-content" id="historyTabContent">
+    <!-- Purchases History -->
+    <div class="tab-pane fade show active py-3" id="purchases" role="tabpanel">
+      <table class="table table-bordered text-center">
+        <thead class="table-light">
+          <tr>
+            <th>تاريخ</th><th>الكمية</th><th>سعر الوحدة</th><th>المجموع</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in purchase_history %}
+          <tr>
+            <td>{{ item.purchase.date }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.price }}</td>
+            <td>{{ item.line_total }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-muted">لا توجد عمليات شراء.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <!-- Sales History -->
+    <div class="tab-pane fade py-3" id="sales" role="tabpanel">
+      <table class="table table-bordered text-center">
+        <thead class="table-light">
+          <tr>
+            <th>تاريخ</th><th>الكمية</th><th>سعر الوحدة</th><th>المجموع</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in sale_history %}
+          <tr>
+            <td>{{ item.sale.date }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.price }}</td>
+            <td>{{ item.line_total }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-muted">لا توجد عمليات بيع.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 
   <div class="text-center mt-4">
     <a href="{% url 'product_list' %}" class="btn btn-secondary">رجوع لقائمة المنتجات</a>
   </div>
 </div>
 {% endblock %}
+  
