@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h2 class="my-4 text-center">تفاصيل المورد: {{ supplier.name }}</h2>
+  <ul class="list-group mb-4">
+    <li class="list-group-item"><strong>الاسم:</strong> {{ supplier.name }}</li>
+    <li class="list-group-item"><strong>الهاتف:</strong> {{ supplier.phone }}</li>
+    <li class="list-group-item"><strong>البريد الإلكتروني:</strong> {{ supplier.email }}</li>
+    <li class="list-group-item"><strong>العنوان:</strong> {{ supplier.address }}</li>
+  </ul>
+  <div class="d-flex justify-content-between">
+    <a href="{% url 'supplier_list' %}" class="btn btn-secondary">رجوع</a>
+    <div>
+      <a href="{% url 'supplier_edit' supplier.id %}" class="btn btn-primary">تعديل</a>
+      <a href="{% url 'supplier_delete' supplier.id %}" class="btn btn-danger">حذف</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

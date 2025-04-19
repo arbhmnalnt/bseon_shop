@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h2 class="my-4 text-center text-danger">حذف المورد</h2>
+  <p class="text-center">هل أنت متأكد من حذف المورد <strong>{{ supplier.name }}</strong>؟</p>
+  <form method="post" class="text-center">
+    {% csrf_token %}
+    <a href="{% url 'supplier_list' %}" class="btn btn-secondary">إلغاء</a>
+    <button type="submit" class="btn btn-danger">تأكيد الحذف</button>
+  </form>
+</div>
+{% endblock %}

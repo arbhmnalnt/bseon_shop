@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% load form_tags %}
+{% block content %}
+<div class="container">
+  <div class="card shadow-sm my-4">
+    <div class="card-header text-center">
+      <h2>
+        {% if sale %}تعديل فاتورة بيع{% else %}فاتورة بيع جديدة{% endif %}
+      </h2>
+    </div>
+    <div class="card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <!-- Main Sale Form -->
+        <div class="row g-3 mb-4">
+          {% for field in form %}
+            <div class="col-md-6">
+              <label class="form-label fw-bold">{{ field.label }}</label>
+              {{ field|add_class:"form-control js-select2" }}
+              {% if field.errors %}
+                <div class="text-danger small">{{ field.errors }}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+
+        <hr>
+
+        <!-- Line Items Header -->
+        <h5 class="mt-4">بنود الفاتورة</h5>
+        {{ formset.management_form }}
+        <div class="row g-3 align-items-end mb-1 fw-bold">
+          <div class="col-md-4">المنتج / الوحدة</div>
+          <div class="col-md-2">الكمية</div>
+          <div class="col-md-2">السعر</div>
+          <div class="col-md-2">المجموع</div>
+          <div class="col-md-2">إجراءات</div>
+        </div>
+
+        <!-- Line Items -->
+        <div id="items">
+          {% for item in formset %}
+          <div class="row g-3 align-items-end mb-2 sale-row">
+            <!-- ProductUnit Select -->
+            <div class="col-md-4">
+              {{ item.product_unit|add_class:"form-control js-select2" }}
+            </div>
+            <!-- Quantity -->
+            <div class="col-md-2">
+              {{ item.quantity|add_class:"form-control qty-input" }}
+            </div>
+            <!-- Price -->
+            <div class="col-md-2">
+              {{ item.price|add_class:"form-control price-input" }}
+            </div>
+            <!-- Line Total (read‑only) -->
+            <div class="col-md-2">
+              <input type="number"
+                     class="form-control line-total"
+                     readonly
+                     step="any"
+                     value="0">
+            </div>
+            <!-- Remove -->
+            <div class="col-md-2 text-center">
+              <button type="button" class="btn btn-outline-danger remove-item">&times;</button>
+            </div>
+            <!-- Hidden fields -->
+            {{ item.id }} {{ item.DELETE }}
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Add Line -->
+        <button id="add-item" type="button" class="btn btn-outline-primary mt-3 mb-4">
+          إضافة بند جديد
+        </button>
+
+        <!-- Invoice Total Display -->
+        <div class="text-end">
+          <h5>الإجمالي الكلي: <span id="invoice-total">0.00</span> ج</h5>
+        </div>
+
+        <!-- Submit -->
+        <div class="text-center mt-3">
+          <button type="submit" class="btn btn-success px-5">حفظ الفاتورة</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Price lookup map -->
+<script>
+  const priceMap = {
+    {% for pu in product_units %}
+      "{{ pu.id }}": "{{ pu.sell_price }}"{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  };
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const itemsDiv   = document.getElementById('items');
+  const totalForms = document.querySelector('input[name="{{ formset.prefix }}-TOTAL_FORMS"]');
+  const addBtn     = document.getElementById('add-item');
+  const invoiceEl  = document.getElementById('invoice-total');
+
+  // Helper to recalc one row and return its total
+  function updateRowTotals(row) {
+    const qty   = parseFloat(row.querySelector('.qty-input').value) || 0;
+    const price = parseFloat(row.querySelector('.price-input').value) || 0;
+    const lineTotal = qty * price;
+    row.querySelector('.line-total').value = lineTotal.toFixed(2);
+    return lineTotal;
+  }
+
+  // Recalc all and update invoice total
+  function updateInvoiceTotal() {
+    let sum = 0;
+    itemsDiv.querySelectorAll('.sale-row').forEach(function(row) {
+      if (row.style.display === 'none') return;
+      sum += updateRowTotals(row);
+    });
+    invoiceEl.textContent = sum.toFixed(2);
+  }
+
+  // Bind change on existing rows
+  function bindRow(row) {
+    const selectPU = row.querySelector('select.js-select2');
+    const qtyIn    = row.querySelector('.qty-input');
+    const priceIn  = row.querySelector('.price-input');
+
+    // Auto‑price on select change
+    selectPU.addEventListener('change', function() {
+      const puId = this.value;
+      if (priceMap[puId] !== undefined) {
+        priceIn.value = priceMap[puId];
+      }
+      updateInvoiceTotal();
+    });
+    // Recalc on qty/price change
+    [qtyIn, priceIn].forEach(function(el) {
+      el.addEventListener('input', updateInvoiceTotal);
+    });
+  }
+
+  // Initial binding
+  itemsDiv.querySelectorAll('.sale-row').forEach(bindRow);
+  updateInvoiceTotal();
+
+  // Add new line
+  addBtn.addEventListener('click', function() {
+    const formCount = parseInt(totalForms.value, 10);
+    const firstRow  = itemsDiv.querySelector('.sale-row');
+    const newRow    = firstRow.cloneNode(true);
+
+    // Update names & IDs
+    newRow.querySelectorAll('input, select').forEach(function(field) {
+      const name = field.name;
+      if (!name) return;
+      const newName = name.replace('-0-', '-' + formCount + '-');
+      field.name = newName;
+      field.id   = 'id_' + newName;
+      if (field.classList.contains('line-total')) {
+        field.value = '0.00';
+      } else {
+        field.value = '';
+      }
+      if (field.type === 'checkbox') field.checked = false;
+    });
+
+    totalForms.value = formCount + 1;
+    itemsDiv.appendChild(newRow);
+
+    // Re‑init Select2 on the new select
+    if (window.$ && $.fn.select2) {
+      $(newRow).find('select.js-select2')
+        .select2({width:'100%', placeholder:'اختر...', allowClear:true, dir:'rtl'});
+    }
+
+    // Bind events on the new row
+    bindRow(newRow);
+  });
+
+  // Remove line
+  itemsDiv.addEventListener('click', function(e) {
+    if (!e.target.classList.contains('remove-item')) return;
+    const row = e.target.closest('.sale-row');
+    const del = row.querySelector('input[type="checkbox"]');
+    if (del) del.checked = true;
+    row.style.display = 'none';
+    updateInvoiceTotal();
+  });
+});
+</script>
+{% endblock %}

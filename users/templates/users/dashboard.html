@@ -1,7 +1,106 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container">
-  <h2 class="mt-4">مرحبًا {{ request.user.username }}</h2>
-  <p>أنت مسجل الدخول كـ {{ request.user.get_role_display }}</p>
+  <h2 class="my-4 text-center">لوحة التحكم الرئيسية</h2>
+
+  <div class="row g-4">
+
+    <!-- New Sale -->
+    <div class="col-6 col-md-3">
+      <a href="{% url 'sale_create' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-cash-register fa-2x mb-2 text-primary"></i>
+            <h6 class="card-title">فاتورة بيع جديدة</h6>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Sales List -->
+    <div class="col-6 col-md-3">
+      <a href="{% url 'sale_list' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-receipt fa-2x mb-2 text-success"></i>
+            <h6 class="card-title">قائمة فواتير البيع</h6>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- New Purchase -->
+    <div class="col-6 col-md-3">
+      <a href="{% url 'purchase_create' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-truck-loading fa-2x mb-2 text-warning"></i>
+            <h6 class="card-title">فاتورة شراء جديدة</h6>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Purchases List -->
+    <div class="col-6 col-md-3">
+      <a href="{% url 'purchase_list' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-boxes fa-2x mb-2 text-info"></i>
+            <h6 class="card-title">قائمة فواتير الشراء</h6>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- New Product -->
+    <div class="col-6 col-md-3">
+      <a href="{% url 'product_create' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-plus-square fa-2x mb-2 text-dark"></i>
+            <h6 class="card-title">إضافة منتج جديد</h6>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Product List -->
+    <div class="col-6 col-md-3">
+      <a href="{% url 'product_list' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-th-list fa-2x mb-2 text-secondary"></i>
+            <h6 class="card-title">قائمة المنتجات</h6>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- New Supplier -->
+    <div class="col-6 col-md-3">
+      <a href="{% url 'supplier_create' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-user-plus fa-2x mb-2 text-primary"></i>
+            <h6 class="card-title">إضافة مورد جديد</h6>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Supplier List -->
+    <div class="col-6 col-md-3">
+      <a href="{% url 'supplier_list' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-users fa-2x mb-2 text-success"></i>
+            <h6 class="card-title">قائمة الموردين</h6>
+          </div>
+        </div>
+      </a>
+    </div>
+
+  </div>
 </div>
 {% endblock %}

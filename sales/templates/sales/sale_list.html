@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h2 class="my-4 text-center">قائمة فواتير البيع</h2>
+  <div class="d-flex justify-content-end mb-3">
+    <a href="{% url 'sale_create' %}" class="btn btn-success">فاتورة بيع جديدة</a>
+  </div>
+  <table class="table table-bordered table-hover text-center">
+    <thead class="table-light">
+      <tr>
+        <th>#</th><th>العميل</th><th>التاريخ</th><th>الإجمالي</th><th>الحالة</th><th>إجراءات</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in sales %}
+      <tr>
+        <td>{{ s.id }}</td>
+        <td>{{ s.customer_name|default:"عميل عام" }}</td>
+        <td>{{ s.date }}</td>
+        <td>{{ s.total }}</td>
+        <td>{{ s.get_status_display }}</td>
+        <td>
+          <a href="{% url 'sale_detail' s.id %}" class="btn btn-info btn-sm">عرض</a>
+          <a href="{% url 'sale_edit' s.id %}" class="btn btn-primary btn-sm">تعديل</a>
+          <a href="{% url 'sale_delete' s.id %}" class="btn btn-danger btn-sm">حذف</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-muted">لا توجد فواتير بيع.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

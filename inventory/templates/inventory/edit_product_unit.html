@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load form_tags %}
+{% block content %}
+<div class="container">
+  <div class="card shadow-sm my-4">
+    <div class="card-header text-center">
+      <h2>تعديل وحدة المنتج</h2>
+      <p class="text-secondary small"> للمنتج: <strong>{{ unit.product.name }}</strong> </p>
+    </div>
+    <div class="card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="row g-3">
+          {% for field in form %}
+            <div class="col-md-6">
+              <label class="form-label fw-bold">{{ field.label }}</label>
+              {{ field|add_class:"form-control" }}
+              {% if field.errors %}
+                <div class="text-danger small">{{ field.errors }}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+          <a href="{% url 'product_detail' unit.product.id %}" class="btn btn-secondary">
+            رجوع للتفاصيل
+          </a>
+          <button type="submit" class="btn btn-primary">
+            حفظ التعديلات
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

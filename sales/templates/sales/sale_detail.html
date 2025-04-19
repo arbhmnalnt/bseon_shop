@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h2 class="my-4 text-center">فاتورة بيع #{{ sale.id }}</h2>
+  <p class="text-end"><strong>العميل:</strong> {{ sale.customer_name|default:"عميل عام" }}</p>
+  <p class="text-end"><strong>التاريخ:</strong> {{ sale.date }}</p>
+  <p class="text-end"><strong>الحالة:</strong> {{ sale.get_status_display }}</p>
+  <hr>
+  <table class="table table-bordered text-center">
+    <thead class="table-light">
+      <tr>
+        <th>الوحدة</th><th>الكمية</th><th>السعر</th><th>المجموع</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in sale.items.all %}
+      <tr>
+        <td>{{ item.product_unit.product.name }}<br>({{ item.product_unit.unit.name }})</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ item.price }}</td>
+        <td>{{ item.line_total }}</td>
+      </tr>
+      {% endfor %}
+      <tr>
+        <td colspan="3" class="text-end"><strong>الإجمالي:</strong></td>
+        <td>{{ sale.total }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="text-center mt-3">
+    <a href="{% url 'sale_list' %}" class="btn btn-secondary">رجوع</a>
+    <a href="{% url 'sale_edit' sale.id %}" class="btn btn-primary">تعديل</a>
+    <a href="{% url 'sale_delete' sale.id %}" class="btn btn-danger">حذف</a>
+  </div>
+</div>
+{% endblock %}
