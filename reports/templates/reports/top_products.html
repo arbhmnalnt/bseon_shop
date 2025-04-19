@@ -6,7 +6,7 @@
     {% for row in data %}
     <li class="list-group-item d-flex justify-content-between">
       {{ row.name }}
-      <span>{{ row.revenue }}</span>
+      <span>{{ row.revenue|floatformat:2 }}</span>
     </li>
     {% endfor %}
   </ul>

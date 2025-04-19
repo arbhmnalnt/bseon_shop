@@ -31,7 +31,8 @@
               {% for row in data %}
               <tr>
                 <td>{{ row.day|date:"Y-m-d" }}</td>
-                <td>{{ row.total }}</td>
+                <td>{{ row.total|floatformat:2 }}</td>
+
               </tr>
               {% empty %}
               <tr>

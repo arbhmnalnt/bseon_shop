@@ -33,7 +33,8 @@
               {% for row in data %}
               <tr>
                 <td>{{ row.month|date:"Y-m" }}</td>
-                <td>{{ row.total }}</td>
+                <td>{{ row.total|floatformat:2 }}</td>
+
               </tr>
               {% empty %}
               <tr><td colspan="2" class="text-muted">لا توجد بيانات.</td></tr>
