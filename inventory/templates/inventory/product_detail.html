@@ -21,7 +21,7 @@
         <th>الوحدة</th>
         <th>المستوى</th>
         <th>سعر التكلفة</th>
-        <th>سعر البيع</th>
+        <th>الأسعار</th>
         <th>رصيد حالي</th>
         <th>إجراءات</th>
       </tr>
@@ -32,7 +32,10 @@
         <td>{{ unit.unit.name }}</td>
         <td>{{ unit.level }}</td>
         <td>{{ unit.cost_price }}</td>
-        <td>{{ unit.sell_price }}</td>
+        <td>
+          <div>1️⃣ {{ unit.price_1 }} ج</div>
+          <div class="text-muted small">2️⃣ {{ unit.price_2 }} | 3️⃣ {{ unit.price_3 }}</div>
+        </td>
         <td>{{ unit.quantity }}</td>
         <td>
           <a href="{% url 'edit_product_unit' unit.id %}" class="btn btn-sm btn-outline-primary">تعديل</a>
@@ -97,7 +100,7 @@
           <tr>
             <td>{{ item.sale.date }}</td>
             <td>{{ item.quantity }}</td>
-            <td>{{ item.price }}</td>
+            <td>{{ item.unit_price }}</td>
             <td>{{ item.line_total }}</td>
           </tr>
           {% empty %}
@@ -113,4 +116,3 @@
   </div>
 </div>
 {% endblock %}
-  

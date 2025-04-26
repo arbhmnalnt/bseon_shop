@@ -32,7 +32,7 @@ PurchaseItemFormSet = inlineformset_factory(
     Purchase,
     PurchaseItem,
     fields=('product_unit','quantity','price'),
-    extra=1,
+    extra=0,
     can_delete=True,
     widgets={
       'product_unit': forms.Select(attrs={'class':'form-control js-select2'}),

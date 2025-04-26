@@ -1,0 +1,31 @@
+{% extends "base.html" %} 
+{% block content %}
+<div class="container">
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+  <div class="card shadow-sm my-5">
+    <div class="card-header bg-danger text-white text-center">
+      <h4>حذف وحدة منتج</h4>
+    </div>
+    <div class="card-body text-center">
+      <p class="lead">
+        هل أنت متأكد أنك تريد حذف الوحدة:
+        <strong>{{ unit.unit.name }}</strong>
+        الخاصة بالمنتج:
+        <strong>{{ unit.product.name }}</strong>؟
+      </p>
+
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">نعم، احذف</button>
+        <a href="{% url 'product_detail' unit.product.id %}" class="btn btn-secondary">إلغاء</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

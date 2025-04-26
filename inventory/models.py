@@ -22,30 +22,29 @@ class ProductUnit(models.Model):
     level             = models.PositiveIntegerField(verbose_name="المستوى (1 للأكبر)")
     conversion_factor = models.DecimalField(max_digits=10, decimal_places=2, default=1, verbose_name="عدد الوحدات الأقل")
     cost_price        = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="سعر التكلفة")
-    sell_price        = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="سعر البيع")
+
+    price_1           = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="السعر 1 (أساسي)")
+    price_2           = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="السعر 2 (عرض)")
+    price_3           = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="السعر 3 (VIP)")
+
     quantity          = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="الكمية المتاحة")
 
     class Meta:
         unique_together = ('product', 'unit')
         ordering = ['level']
 
-
     def __str__(self):
-        return str(self.product.name)
+        return f"{self.product.name} - {self.unit.name} ({self.quantity})"
 
     def save(self, *args, **kwargs):
-        # 1) Save this unit’s own cost & sell price first
         super().save(*args, **kwargs)
 
-        # 2) Find all "higher" units (bigger packaging) for the same product
-        siblings = ProductUnit.objects.\
-            filter(product=self.product, level__lt=self.level).\
-            order_by('-level')
-
-        # 3) Propagate this unit's costs up the chain
-        #    For each sibling unit at a smaller level (bigger package),
-        #    multiply by its conversion_factor to get its cost & sell prices
-        for sibling in siblings:
-            sibling.cost_price = sibling.conversion_factor * self.cost_price
-            sibling.sell_price = sibling.conversion_factor * self.sell_price
-            super(ProductUnit, sibling).save(update_fields=['cost_price','sell_price'])
+        # لو دي الوحدة الأكبر (مستوى 1) — حدّث باقي الوحدات
+        if self.level == 1:
+            siblings = ProductUnit.objects.filter(product=self.product).exclude(id=self.id)
+            for sibling in siblings:
+                if sibling.conversion_factor > 0:
+                    sibling.price_1 = round(self.price_1 / sibling.conversion_factor, 2)
+                    sibling.price_2 = round(self.price_2 / sibling.conversion_factor, 2)
+                    sibling.price_3 = round(self.price_3 / sibling.conversion_factor, 2)
+                    sibling.save()

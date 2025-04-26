@@ -20,23 +20,25 @@ class ProductForm(forms.ModelForm):
 
 class ProductUnitForm(forms.ModelForm):
     class Meta:
-        model  = ProductUnit
-        fields = ['product', 'unit', 'level', 'conversion_factor', 'cost_price', 'sell_price', 'quantity']
+        model = ProductUnit
+        fields = [
+            'product', 'unit', 'level', 'conversion_factor',
+            'cost_price', 'price_1', 'price_2', 'price_3', 'quantity'
+        ]
         labels = {
-            'product':          'المنتج',
-            'unit':             'الوحدة',
-            'level':            'المستوى (1 للأكبر)',
-            'conversion_factor':'عدد الوحدات الأقل',
-            'cost_price':       'سعر التكلفة',
-            'sell_price':       'سعر البيع',
-            'quantity':         'الكمية المتاحة',
+            'product': 'المنتج',
+            'unit': 'الوحدة',
+            'level': 'المستوى (1 = الأكبر)',
+            'conversion_factor': 'عدد الوحدات الأقل داخل هذه الوحدة',
+            'cost_price': 'سعر التكلفة',
+            'price_1': 'السعر 1 (أساسي)',
+            'price_2': 'السعر 2 (عرض)',
+            'price_3': 'السعر 3 (VIP)',
+            'quantity': 'الكمية المتاحة',
         }
         widgets = {
-            'product':          forms.Select(attrs={'class': 'form-control'}),
-            'unit':             forms.Select(attrs={'class': 'form-control'}),
-            'level':            forms.NumberInput(attrs={'class': 'form-control'}),
-            'conversion_factor':forms.NumberInput(attrs={'class': 'form-control'}),
-            'cost_price':       forms.NumberInput(attrs={'class': 'form-control'}),
-            'sell_price':       forms.NumberInput(attrs={'class': 'form-control'}),
-            'quantity':         forms.NumberInput(attrs={'class': 'form-control'}),
+            field: forms.NumberInput(attrs={'class': 'form-control'})
+            for field in ['level', 'conversion_factor', 'cost_price', 'price_1', 'price_2', 'price_3', 'quantity']
         }
+        widgets['product'] = forms.Select(attrs={'class': 'form-control'})
+        widgets['unit'] = forms.Select(attrs={'class': 'form-control'})

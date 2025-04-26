@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load form_tags %}
+
 {% block content %}
 <div class="container">
   <div class="card shadow-sm my-4">
@@ -16,13 +17,13 @@
         <!-- Main Sale Form -->
         <div class="row g-3 mb-4">
           {% for field in form %}
-            <div class="col-md-6">
-              <label class="form-label fw-bold">{{ field.label }}</label>
-              {{ field|add_class:"form-control js-select2" }}
-              {% if field.errors %}
-                <div class="text-danger small">{{ field.errors }}</div>
-              {% endif %}
-            </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">{{ field.label }}</label>
+            {{ field|add_class:"form-control js-select2" }}
+            {% if field.errors %}
+            <div class="text-danger small">{{ field.errors }}</div>
+            {% endif %}
+          </div>
           {% endfor %}
         </div>
 
@@ -32,10 +33,10 @@
         <h5 class="mt-4">بنود الفاتورة</h5>
         {{ formset.management_form }}
         <div class="row g-3 align-items-end mb-1 fw-bold text-center">
-          <div class="col-md-4">المنتج / الوحدة</div>
+          <div class="col-md-3">المنتج / الوحدة</div>
+          <div class="col-md-3">نوع السعر</div>
           <div class="col-md-2">الكمية</div>
           <div class="col-md-2">السعر</div>
-          <div class="col-md-2">المجموع</div>
           <div class="col-md-2">حذف</div>
         </div>
 
@@ -43,17 +44,17 @@
         <div id="items">
           {% for item in formset %}
           <div class="row g-3 align-items-end mb-2 sale-row">
-            <div class="col-md-4">
-              {{ item.product_unit|add_class:"form-control js-select2" }}
+            <div class="col-md-3">
+              {{ item.product_unit|add_class:"form-control js-select2 product-unit" }}
+            </div>
+            <div class="col-md-3">
+              {{ item.price_type|add_class:"form-select price-type" }}
             </div>
             <div class="col-md-2">
               {{ item.quantity|add_class:"form-control qty-input" }}
             </div>
             <div class="col-md-2">
-              {{ item.price|add_class:"form-control price-input" }}
-            </div>
-            <div class="col-md-2">
-              <input type="number" class="form-control line-total" readonly step="any" value="0">
+              {{ item.unit_price|add_class:"form-control unit-price-input" }}
             </div>
             <div class="col-md-2 text-center">
               <button type="button" class="btn btn-outline-danger remove-item">&times;</button>
@@ -67,6 +68,9 @@
         <div class="d-flex justify-content-between mt-3 mb-4">
           <button id="add-item" type="button" class="btn btn-outline-primary">
             + إضافة بند جديد
+          </button>
+          <button id="refresh-prices" type="button" class="btn btn-outline-success">
+            🔄 تحديث الأسعار
           </button>
           <h5 class="me-3">الإجمالي الكلي: <span id="invoice-total">0.00</span> ج</h5>
         </div>
@@ -82,131 +86,94 @@
 {% endblock %}
 
 {% block scripts %}
-  <!-- jQuery & Select2 -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const totalDisplay = document.getElementById('invoice-total');
+  const addBtn = document.getElementById('add-item');
+  const refreshPricesBtn = document.getElementById('refresh-prices');
+  const itemsDiv = document.getElementById('items');
+  const totalForms = document.querySelector('[name$="-TOTAL_FORMS"]');
 
-  <!-- Data maps -->
-  {{ price_map|json_script:"price-data" }}
-  {{ stock_map|json_script:"stock-data" }}
+  function updateRow(row) {
+    const qtyInput = row.querySelector('.qty-input');
+    const priceInput = row.querySelector('.unit-price-input');
+    const qty = parseFloat(qtyInput?.value || 0);
+    const price = parseFloat(priceInput?.value || 0);
+    const total = qty * price;
+    return total;
+  }
 
-  <script>
-  $(function() {
-    const priceMap   = JSON.parse($('#price-data').text());
-    const stockMap   = JSON.parse($('#stock-data').text());
-    const $itemsDiv  = $('#items');
-    const $totalForms= $('input[name="{{ formset.prefix }}-TOTAL_FORMS"]');
-    const $addBtn    = $('#add-item');
-    const $invoiceEl = $('#invoice-total');
+  function updateInvoiceTotal() {
+    let total = 0;
+    document.querySelectorAll('.sale-row').forEach(row => {
+      total += updateRow(row);
+    });
+    totalDisplay.textContent = total.toFixed(2);
+  }
 
-    // Calculate one row total
-    function updateRow($row) {
-      const qty   = parseFloat($row.find('.qty-input').val()) || 0;
-      const price = parseFloat($row.find('.price-input').val()) || 0;
-      const total = qty * price;
-      $row.find('.line-total').val(total.toFixed(2));
-      return total;
+  function fetchPriceAndUpdate(row) {
+    const productSelect = row.querySelector('.product-unit');
+    const priceTypeSelect = row.querySelector('.price-type');
+    const priceInput = row.querySelector('.unit-price-input');
+
+    const unitId = productSelect.value;
+    const priceType = priceTypeSelect.value;
+
+    if (unitId && priceType) {
+      fetch(`/sales/ajax/get-price/${unitId}/${priceType}/`)
+        .then(res => res.json())
+        .then(data => {
+          priceInput.value = data.price;
+          updateInvoiceTotal();
+        });
     }
+  }
 
-    // Calculate full invoice total
-    function updateInvoice() {
-      let sum = 0;
-      $itemsDiv.find('.sale-row').each(function() {
-        const $r = $(this);
-        if ($r.is(':visible')) sum += updateRow($r);
-      });
-      $invoiceEl.text(sum.toFixed(2));
-    }
+  function bindRow(row) {
+    const productSelect = row.querySelector('.product-unit');
+    const priceTypeSelect = row.querySelector('.price-type');
+    const qtyInput = row.querySelector('.qty-input');
 
-    // Bind a sale-row for price, stock, and recalculation
-    function bindRow($row) {
-      const $pu    = $row.find('select.js-select2');
-      const $qty   = $row.find('.qty-input');
-      const $price = $row.find('.price-input');
-      let $badge   = $row.find('.stock-badge');
-      if (!$badge.length) {
-        $badge = $('<small class="d-block text-secondary stock-badge"></small>');
-        $pu.parent().append($badge);
+    if (productSelect) productSelect.addEventListener('change', () => fetchPriceAndUpdate(row));
+    if (priceTypeSelect) priceTypeSelect.addEventListener('change', () => fetchPriceAndUpdate(row));
+    if (qtyInput) qtyInput.addEventListener('input', updateInvoiceTotal);
+  }
+
+  document.querySelectorAll('.sale-row').forEach(bindRow);
+
+  addBtn?.addEventListener('click', () => {
+    const formCount = parseInt(totalForms.value);
+    const firstRow = document.querySelector('.sale-row');
+    const newRow = firstRow.cloneNode(true);
+
+    newRow.querySelectorAll('input, select').forEach(input => {
+      const oldName = input.name;
+      if (oldName) {
+        const newName = oldName.replace(/-(\\d+)-/, `-${formCount}-`);
+        input.name = newName;
+        input.id = `id_${newName}`;
+        if (!input.classList.contains('price-type')) input.value = '';
+        if (input.classList.contains('unit-price-input')) input.value = '0.00';
       }
-      $pu.on('change', function() {
-        const id = $(this).val();
-        if (priceMap[id] !== undefined)   $price.val(priceMap[id]);
-        if (stockMap[id] !== undefined)   $badge.text('رصيد: ' + stockMap[id]);
-        updateInvoice();
-      });
-      $qty.add($price).on('input', updateInvoice);
+    });
+
+    totalForms.value = formCount + 1;
+    itemsDiv.appendChild(newRow);
+    bindRow(newRow);
+  });
+
+  document.addEventListener('click', function (e) {
+    if (e.target.classList.contains('remove-item')) {
+      const row = e.target.closest('.sale-row');
+      row.remove();
+      updateInvoiceTotal();
     }
-
-    // Initialize Select2 with icons & trimmed labels
-    $('select.js-select2').select2({
-      width: '100%',
-      placeholder: 'اختر…',
-      allowClear: true,
-      dir: 'rtl',
-      templateResult: function(d) {
-        if (!d.id) return d.text;
-        return $('<span><i class="fas fa-boxes me-2"></i>' + d.text + '</span>');
-      },
-      templateSelection: function(d) {
-        if (!d.id) return d.text;
-        return d.text.split(' (')[0];
-      },
-      dropdownCssClass: 'select2-bootstrap-dropdown'
-    });
-
-    // Bind existing rows & compute initial total
-    $('.sale-row').each(function() {
-      bindRow($(this));
-    });
-    updateInvoice();
-
-    // Add new line
-    $addBtn.on('click', function() {
-      let idx = parseInt($totalForms.val(), 10);
-      const $first = $itemsDiv.find('.sale-row').first();
-      const $new   = $first.clone();
-      $new.find('input,select').each(function() {
-        const $f = $(this);
-        const name = $f.attr('name');
-        if (!name) return;
-        const newName = name.replace('-0-', '-' + idx + '-');
-        $f.attr({name: newName, id: 'id_' + newName});
-        if ($f.is('.line-total')) $f.val('0.00');
-        else $f.val('');
-        if ($f.is(':checkbox')) $f.prop('checked', false);
-      });
-      $totalForms.val(idx + 1);
-      $itemsDiv.append($new);
-
-      // init select2 & bind
-      const $sel = $new.find('select.js-select2');
-      $sel.select2({
-        width: '100%',
-        placeholder: 'اختر…',
-        allowClear: true,
-        dir: 'rtl',
-        templateResult: function(d) {
-          if (!d.id) return d.text;
-          return $('<span><i class="fas fa-boxes me-2"></i>' + d.text + '</span>');
-        },
-        templateSelection: function(d) {
-          if (!d.id) return d.text;
-          return d.text.split(' (')[0];
-        },
-        dropdownCssClass: 'select2-bootstrap-dropdown'
-      });
-      bindRow($new);
-      updateInvoice();
-    });
-
-    // Remove a line
-    $itemsDiv.on('click', '.remove-item', function() {
-      const $row = $(this).closest('.sale-row');
-      const $del = $row.find('input[type="checkbox"]');
-      if ($del.length) $del.prop('checked', true);
-      $row.hide();
-      updateInvoice();
+  });
+  refreshPricesBtn?.addEventListener('click', function () {
+    document.querySelectorAll('.sale-row').forEach(row => {
+      fetchPriceAndUpdate(row);
     });
   });
-  </script>
+});
+</script>
 {% endblock %}

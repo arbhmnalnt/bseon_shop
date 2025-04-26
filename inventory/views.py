@@ -2,6 +2,8 @@
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
+from django.db.models import ProtectedError
+
 from .models import Product, ProductUnit
 from .forms import ProductForm, ProductUnitForm
 from purchases.models import PurchaseItem
@@ -94,9 +96,15 @@ def edit_product_unit(request, pk):
 # 🗑️ حذف وحدة منتج
 def delete_product_unit(request, pk):
     unit = get_object_or_404(ProductUnit, pk=pk)
+    product_id = unit.product.id
+
     if request.method == 'POST':
-        product_id = unit.product.id
-        unit.delete()
-        messages.success(request, "تم حذف الوحدة.")
-        return redirect('product_detail', pk=product_id)
+        try:
+            unit.delete()
+            messages.success(request, 'تم حذف الوحدة بنجاح.')
+        except ProtectedError:
+            messages.error(request, 'لا يمكن حذف هذه الوحدة لأنها مستخدمة في عمليات بيع أو شراء.')
+
+        return redirect('product_detail', product_id)
+
     return render(request, 'inventory/delete_product_unit.html', {'unit': unit})

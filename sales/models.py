@@ -1,5 +1,3 @@
-# sales/models.py
-
 from django.db import models
 from inventory.models import ProductUnit
 
@@ -58,7 +56,7 @@ class SaleItem(models.Model):
         decimal_places=2,
         verbose_name="الكمية"
     )
-    price = models.DecimalField(
+    unit_price = models.DecimalField(  # ✅ تم تعديل الاسم هنا
         max_digits=12,
         decimal_places=2,
         verbose_name="سعر الوحدة"
@@ -76,7 +74,7 @@ class SaleItem(models.Model):
 
     def save(self, *args, **kwargs):
         # حساب المجموع قبل الحفظ
-        self.line_total = self.quantity * self.price
+        self.line_total = self.quantity * self.unit_price
         super().save(*args, **kwargs)
         # خصم الكمية من المخزون
         pu = self.product_unit
